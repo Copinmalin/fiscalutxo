@@ -60,9 +60,9 @@ Reste à faire plus tard dans cette phase :
 
 Objectif : tester le flux CLI avec un vrai export Sparrow utilisateur sans committer de données personnelles.
 
-Statut : **prochaine phase**.
+Statut : **en cours**.
 
-Livrables attendus :
+Livrables validés ou en cours :
 
 - procédure de test manuel ;
 - règles d’anonymisation et non-commit ;
@@ -166,12 +166,19 @@ Exception uniquement si elle corrige un risque fiscal, sécurité ou architectur
 - #11 Implémenter le parseur CSV Sparrow V0.
 - #13 Créer une sortie d’import JSON alignée raw_rows et normalized_events.
 - #15 Créer une première commande CLI locale pour convertir un CSV Sparrow en JSON.
+- #17 Synchroniser la documentation après la CLI Sparrow V0.
 
-## 6. Issues à créer ensuite
+## 6. Issues en cours
 
-Priorité immédiate :
+- #19 Documenter un scénario de test manuel réel sans données personnelles committées.
 
-- Documenter un scénario de test manuel réel sans committer de données personnelles.
+## 7. Issues à créer ensuite
+
+Après retour du test manuel :
+
+- Corriger le parseur Sparrow si le format réel diffère.
+- Améliorer les messages d’erreur utilisateur si nécessaire.
+- Documenter les colonnes réellement observées si besoin.
 
 Plus tard :
 
@@ -184,7 +191,7 @@ Plus tard :
 - Créer la checklist 3916-bis.
 - Ajouter les avertissements fiscaux applicatifs.
 
-## 7. Structure actuelle du dépôt
+## 8. Structure actuelle du dépôt
 
 ```text
 fiscalutxo/
@@ -209,6 +216,7 @@ fiscalutxo/
 │   ├── IMPORTS.md
 │   ├── ARCHITECTURE.md
 │   ├── CLI.md
+│   ├── MANUAL_REAL_TEST.md
 │   ├── NORMALIZED_EVENT.md
 │   ├── SQLITE_SCHEMA_V0.md
 │   └── importers/
@@ -217,16 +225,12 @@ fiscalutxo/
 └── samples/
 ```
 
-## 8. Étape en cours
+## 9. Étape en cours
 
 **Étape actuelle : Phase 2 — Test manuel réel contrôlé.**
 
-## 9. Prochaine action unique
+## 10. Prochaine action unique
 
-Créer et traiter une issue :
+Faire tourner la procédure `docs/MANUAL_REAL_TEST.md` localement avec un vrai export Sparrow, sans committer de données personnelles.
 
-```text
-Documenter un scénario de test manuel réel sans committer de données personnelles
-```
-
-Objectif : permettre de lancer la CLI dans VS Code avec un export Sparrow réel, tout en protégeant les données patrimoniales.
+Objectif : obtenir un retour réel sur le parseur avant de créer une nouvelle fonctionnalité.
