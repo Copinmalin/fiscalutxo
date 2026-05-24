@@ -9,6 +9,7 @@ Le dépôt sert à centraliser :
 - la documentation fiscale et technique ;
 - les spécifications fonctionnelles ;
 - les instructions de travail pour Codex et les agents IA ;
+- les règles de tests et de sécurité ;
 - les futurs fichiers source de l’application.
 
 ## Objectif du projet
@@ -42,12 +43,15 @@ fiscalutxo/
 │   ├── SOURCE_OF_TRUTH.md
 │   ├── ROADMAP.md
 │   ├── AI_RULES.md
+│   ├── TEST_SECURITY_CHECKLIST.md
 │   ├── SPEC_MVP_0_1.md
 │   ├── TAX_FR.md
 │   ├── IMPORTS.md
 │   └── ARCHITECTURE.md
 ├── .github/
+│   ├── pull_request_template.md
 │   └── ISSUE_TEMPLATE/
+│       ├── 00-agent-task.yml
 │       ├── feature.yml
 │       ├── bug.yml
 │       ├── research.yml
@@ -62,6 +66,7 @@ fiscalutxo/
 - [`docs/SOURCE_OF_TRUTH.md`](docs/SOURCE_OF_TRUTH.md) : source de vérité courte du projet.
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) : plan de pilotage et suivi des phases.
 - [`docs/AI_RULES.md`](docs/AI_RULES.md) : règles détaillées pour les interventions IA.
+- [`docs/TEST_SECURITY_CHECKLIST.md`](docs/TEST_SECURITY_CHECKLIST.md) : checklist de tests, sécurité et vie privée.
 - [`docs/SPEC_MVP_0_1.md`](docs/SPEC_MVP_0_1.md) : spécification fonctionnelle du MVP.
 - [`docs/TAX_FR.md`](docs/TAX_FR.md) : notes fiscales françaises utiles au projet.
 - [`docs/IMPORTS.md`](docs/IMPORTS.md) : formats CSV et règles d’import.
