@@ -4,8 +4,12 @@
   "private": true,
   "description": "Local-first Bitcoin-only tax preparation helper for French residents.",
   "type": "module",
+  "bin": {
+    "fiscalutxo": "./dist/src/cli/fiscalutxo.js"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "cli": "node ./dist/src/cli/fiscalutxo.js",
     "lint": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run"
   },
@@ -18,6 +22,7 @@
   ],
   "license": "UNLICENSED",
   "devDependencies": {
+    "@types/node": "^22.0.0",
     "typescript": "^5.0.0",
     "vitest": "^3.0.0"
   }
