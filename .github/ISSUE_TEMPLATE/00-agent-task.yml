@@ -1,0 +1,124 @@
+name: Tache agent IA
+description: Creer une issue exploitable par Codex, Copilot ou un agent IA
+title: "[Agent IA] "
+labels: ["mvp"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Utilise ce formulaire pour creer une tache claire, limitee et verifiable pour un agent IA.
+
+        Regle : une issue = une tache = une PR possible.
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Contexte
+      description: Decrire uniquement les faits utiles.
+      placeholder: |
+        Situation actuelle :
+        Source de verite a respecter :
+        Decisions deja prises :
+    validations:
+      required: true
+
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objectif
+      description: Formuler une tache precise, verifiable et limitee.
+    validations:
+      required: true
+
+  - type: textarea
+    id: files
+    attributes:
+      label: Fichiers probablement concernes
+      description: Lister les fichiers ou dossiers a consulter ou modifier.
+    validations:
+      required: false
+
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Contraintes
+      value: |
+        - Respecter AGENTS.md.
+        - Respecter docs/SOURCE_OF_TRUTH.md.
+        - Respecter docs/ROADMAP.md.
+        - Ne pas modifier l'architecture sans justification explicite.
+        - Ne pas introduire de dependance sans validation.
+        - Ne pas traiter les sujets hors perimetre MVP.
+        - Ne pas creer de doublon documentaire.
+        - Signaler toute ambiguite fiscale avec needs_review.
+        - Ne pas collecter de donnees sensibles de wallet ou de plateforme.
+    validations:
+      required: true
+
+  - type: textarea
+    id: out_of_scope
+    attributes:
+      label: Hors perimetre
+      description: Indiquer clairement ce que l'agent ne doit pas traiter.
+    validations:
+      required: false
+
+  - type: textarea
+    id: definition_of_done
+    attributes:
+      label: Definition of Done
+      value: |
+        - L'objectif est rempli.
+        - Les changements sont limites au scope.
+        - Les fichiers modifies sont coherents avec la structure du depot.
+        - Les tests ou verifications necessaires sont indiques.
+        - Les controles securite sont indiques.
+        - La documentation est mise a jour si necessaire.
+        - Les limites restantes sont signalees.
+        - La prochaine action est claire.
+    validations:
+      required: true
+
+  - type: textarea
+    id: tests
+    attributes:
+      label: Tests ou verifications attendus
+      placeholder: |
+        Pour une tache code :
+        - npm run lint
+        - npm run test
+        - npm run build
+
+        Pour une tache documentaire :
+        - verifier le rendu Markdown
+        - verifier l'absence de contradiction
+        - verifier la coherence avec README.md, AGENTS.md et docs/SOURCE_OF_TRUTH.md
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: risks
+    attributes:
+      label: Risques a controler
+      options:
+        - label: Risque de hors-scope
+        - label: Risque fiscal
+        - label: Risque de securite
+        - label: Risque de donnees reelles exposees
+        - label: Risque de dependance inutile
+        - label: Risque de contradiction documentaire
+
+  - type: textarea
+    id: expected_result
+    attributes:
+      label: Resultat attendu de l'agent
+      value: |
+        - resume du changement ;
+        - fichiers modifies ;
+        - tests executes ;
+        - tests non executes et pourquoi ;
+        - controles securite effectues ;
+        - limites restantes ;
+        - prochaine action recommandee.
+    validations:
+      required: true
