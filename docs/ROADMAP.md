@@ -25,10 +25,13 @@ Livrables :
 - source de vérité courte ;
 - roadmap ;
 - règles IA / Codex ;
+- checklist tests et sécurité ;
 - templates d’issues ;
-- labels GitHub.
+- template Pull Request ;
+- premières issues MVP ;
+- placeholders de documentation.
 
-Statut : **en cours**.
+Statut : **terminé**.
 
 ### Phase 1 — Spécification MVP 0.1
 
@@ -43,7 +46,7 @@ Livrables :
 - format d’export 2086 ;
 - critères d’acceptation MVP.
 
-Statut : **à faire**.
+Statut : **en cours**.
 
 ### Phase 2 — Collecte des CSV exemples
 
@@ -149,20 +152,24 @@ Exception uniquement si elle corrige un risque fiscal, sécurité ou architectur
 
 ## 5. Backlog initial GitHub
 
-### Issues à créer en priorité
+### Issues créées
 
 1. Initialiser le dépôt et la documentation projet.
-2. Définir le format `NormalizedEvent`.
+2. Définir le format `NormalizedEvent` V0.
 3. Définir le schéma SQLite V0.
-4. Créer l’import CSV Sparrow.
-5. Créer l’import CSV générique.
-6. Créer l’écran de revue des transactions.
-7. Créer la qualification fiscale manuelle.
-8. Implémenter le calcul 2086 cas simple.
-9. Générer l’export XLSX préparatoire.
-10. Générer le résumé 2042 C.
-11. Créer la checklist 3916-bis.
-12. Ajouter les avertissements fiscaux.
+4. Renforcer les règles agents, tests et sécurité.
+
+### Issues à créer ensuite
+
+- Créer l’import CSV Sparrow.
+- Créer l’import CSV générique.
+- Créer l’écran de revue des transactions.
+- Créer la qualification fiscale manuelle.
+- Implémenter le calcul 2086 cas simple.
+- Générer l’export XLSX préparatoire.
+- Générer le résumé 2042 C.
+- Créer la checklist 3916-bis.
+- Ajouter les avertissements fiscaux.
 
 ## 6. Labels GitHub recommandés
 
@@ -191,12 +198,15 @@ fiscalutxo/
 │   ├── SOURCE_OF_TRUTH.md
 │   ├── ROADMAP.md
 │   ├── AI_RULES.md
+│   ├── TEST_SECURITY_CHECKLIST.md
 │   ├── SPEC_MVP_0_1.md
 │   ├── TAX_FR.md
 │   ├── IMPORTS.md
 │   └── ARCHITECTURE.md
 ├── .github/
+│   ├── pull_request_template.md
 │   └── ISSUE_TEMPLATE/
+│       ├── 00-agent-task.yml
 │       ├── feature.yml
 │       ├── bug.yml
 │       ├── research.yml
@@ -217,17 +227,18 @@ Copinmalin/fiscalutxo
 
 ## 9. Étape en cours
 
-**Étape actuelle : Phase 0 — Cadrage GitHub.**
-
-À faire maintenant :
-
-1. Ajouter `docs/AI_RULES.md`.
-2. Ajouter les placeholders de documentation.
-3. Ajouter les templates d’issues.
-4. Créer les premières issues MVP.
+**Étape actuelle : Phase 1 — Spécification MVP 0.1.**
 
 ## 10. Prochaine action unique
 
-Créer `docs/SPEC_MVP_0_1.md` avec le périmètre fonctionnel du MVP 0.1.
+Traiter l’issue #2 : **Définir le format `NormalizedEvent` V0**.
 
-Tant que cette spécification n’est pas posée, ne pas coder l’application.
+Instruction Codex recommandée :
+
+```text
+Lis AGENTS.md, docs/SOURCE_OF_TRUTH.md, docs/ROADMAP.md et docs/SPEC_MVP_0_1.md.
+Traite uniquement l’issue #2 : Définir le format NormalizedEvent V0.
+Ne crée pas d’interface.
+Ne crée pas encore la base SQLite.
+Produis une spécification TypeScript simple, documentée et testable.
+```
