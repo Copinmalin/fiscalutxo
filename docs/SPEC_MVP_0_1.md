@@ -35,10 +35,19 @@ Utilisateur : particulier français Bitcoin-only.
 Scénario :
 
 1. L’utilisateur importe un CSV.
-2. L’application affiche les opérations détectées.
-3. L’utilisateur qualifie chaque opération ambiguë.
-4. L’application produit un tableau préparatoire.
-5. L’utilisateur exporte les résultats.
+2. L’application conserve les lignes brutes.
+3. L’application convertit les opérations vers `NormalizedEvent`.
+4. L’utilisateur qualifie chaque opération ambiguë.
+5. L’application produit un tableau préparatoire.
+6. L’utilisateur exporte les résultats.
+
+## Format canonique
+
+Le format canonique minimal du MVP est défini dans :
+
+- [`docs/NORMALIZED_EVENT.md`](NORMALIZED_EVENT.md)
+
+Ce format sert de contrat entre les imports CSV, le stockage local, la qualification fiscale et les futurs exports.
 
 ## Critères d’acceptation
 
@@ -46,7 +55,7 @@ Le MVP 0.1 est acceptable si :
 
 - un CSV exemple peut être importé ;
 - les lignes brutes sont conservées ;
-- les opérations sont converties vers un format normalisé ;
+- les opérations sont converties vers `NormalizedEvent` ;
 - les opérations ambiguës sont marquées `needs_review` ;
 - aucune donnée sensible de wallet n’est demandée ;
 - un export lisible est produit ;
@@ -54,4 +63,4 @@ Le MVP 0.1 est acceptable si :
 
 ## Prochaine étape
 
-Définir le format `NormalizedEvent` V0.
+Définir le schéma SQLite V0 en cohérence avec `NormalizedEvent`.
