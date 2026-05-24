@@ -1,4 +1,4 @@
-import type { NormalizedEvent, SourceRef } from '../domain/normalized-event.js'
+import type { FiatValue, NormalizedEvent, SourceRef } from '../domain/normalized-event.js'
 import { validateNormalizedEvent } from '../domain/normalized-event.js'
 
 export const SPARROW_TRANSACTIONS_CSV_PARSER = 'sparrow-transactions-csv'
@@ -113,9 +113,15 @@ function toNormalizedEvent(raw: SparrowRawRow, sourceRef: SourceRef, rowErrors: 
     direction,
     eventType: 'manual_review',
     taxableStatus: 'needs_review',
-    label: raw.Label || undefined,
-    txid: raw.Txid || undefined,
     reviewReasons,
+  }
+
+  if (raw.Label?.trim()) {
+    event.label = raw.Label.trim()
+  }
+
+  if (raw.Txid?.trim()) {
+    event.txid = raw.Txid.trim()
   }
 
   if (feeSats !== null && feeSats > 0) {
@@ -183,7 +189,12 @@ function parseSparrowDate(value: string | undefined, errors: string[]): string |
     return null
   }
 
-  const [, year, month, day, hour, minute, second] = match
+  const year = match[1]
+  const month = match[2]
+  const day = match[3]
+  const hour = match[4]
+  const minute = match[5]
+  const second = match[6]
   const iso = `${year}-${month}-${day}T${hour}:${minute}:${second}Z`
   const timestamp = Date.parse(iso)
 
@@ -241,14 +252,20 @@ function parseAmountToSats(value: string): number | null {
     return null
   }
 
-  const [, wholePart, fractionalPart] = decimalMatch
+  const wholePart = decimalMatch[1]
+  const fractionalPart = decimalMatch[2]
+
+  if (!wholePart || !fractionalPart) {
+    return null
+  }
+
   const wholeSats = Number.parseInt(wholePart, 10) * 100_000_000
   const fractionalSats = Number.parseInt(fractionalPart.padEnd(8, '0'), 10)
 
   return sign * (wholeSats + fractionalSats)
 }
 
-function parseOptionalEurValue(raw: SparrowRawRow): NormalizedEvent['fiat'] | undefined {
+function parseOptionalEurValue(raw: SparrowRawRow): FiatValue | undefined {
   const value = raw['Value (EUR)']
   const normalized = normalizeNumericString(value)
 
@@ -278,7 +295,13 @@ function parseEuroCents(value: string): number | null {
     return null
   }
 
-  const [, euros, cents = '0'] = match
+  const euros = match[1]
+  const cents = match[2] ?? '0'
+
+  if (!euros) {
+    return null
+  }
+
   return sign * (Number.parseInt(euros, 10) * 100 + Number.parseInt(cents.padEnd(2, '0'), 10))
 }
 
@@ -320,6 +343,10 @@ function parseCsvRecords(csv: string): string[][] {
   for (let index = 0; index < csv.length; index += 1) {
     const char = csv[index]
     const next = csv[index + 1]
+
+    if (char === undefined) {
+      continue
+    }
 
     if (char === '"') {
       if (inQuotes && next === '"') {
