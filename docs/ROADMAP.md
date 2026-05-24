@@ -18,7 +18,9 @@ Priorité absolue : application fonctionnelle avant ajout de confort.
 
 Objectif : créer le cadre de travail.
 
-Livrables :
+Statut : **terminé**.
+
+Livrables validés :
 
 - dépôt GitHub créé ;
 - README initial ;
@@ -31,73 +33,78 @@ Livrables :
 - premières issues MVP ;
 - placeholders de documentation.
 
-Statut : **terminé**.
-
 ### Phase 1 — Spécification MVP 0.1
 
-Objectif : verrouiller ce qui sera réellement construit.
+Objectif : verrouiller les contrats de données et le flux minimal.
 
-Livrables :
+Statut : **terminé pour le socle d’import Sparrow**.
 
-- parcours utilisateur minimal ;
-- liste des écrans ;
-- format `NormalizedEvent` ;
-- schéma de base locale V0 ;
-- format d’export 2086 ;
-- critères d’acceptation MVP.
+Livrables validés :
 
-Statut : **en cours**.
+- format `NormalizedEvent` V0 ;
+- schéma local V0 documenté ;
+- spécification import CSV Sparrow V0 ;
+- TypeScript minimal ;
+- CI GitHub ;
+- parseur Sparrow V0 ;
+- bundle local d’import JSON ;
+- CLI locale Sparrow vers JSON.
 
-### Phase 2 — Collecte des CSV exemples
+Reste à faire plus tard dans cette phase :
 
-Objectif : travailler sur des formats réels, anonymisés.
+- spécification export 2086 ;
+- critères complets d’acceptation fiscale ;
+- éventuels imports Paymium / Bitstack / StackinSat.
 
-Sources à collecter :
+### Phase 2 — Test manuel réel contrôlé
 
-- Sparrow ;
-- Paymium ;
-- Bitstack ;
-- StackinSat ;
-- Bull Bitcoin si disponible ;
-- import manuel fictif.
+Objectif : tester le flux CLI avec un vrai export Sparrow utilisateur sans committer de données personnelles.
 
-Statut : **à faire**.
+Statut : **prochaine phase**.
 
-### Phase 3 — Prototype moteur
+Livrables attendus :
 
-Objectif : prouver l’import, la normalisation et l’export.
+- procédure de test manuel ;
+- règles d’anonymisation et non-commit ;
+- commande VS Code / terminal ;
+- checklist de vérification du JSON produit ;
+- consignes de suppression locale des fichiers sensibles si nécessaire.
 
-Livrables :
+### Phase 3 — Prototype moteur élargi
 
-- import CSV Sparrow ;
-- import CSV générique ;
-- stockage local ;
-- normalisation ;
-- qualification manuelle simple ;
-- export JSON ;
-- export XLSX préparatoire.
+Objectif : améliorer le moteur après retour du test manuel.
 
 Statut : **à faire**.
+
+Pistes :
+
+- durcir le parseur CSV si nécessaire ;
+- améliorer les erreurs utilisateur ;
+- introduire un import manuel générique ;
+- préparer le stockage local ;
+- préparer l’export déclaratif.
 
 ### Phase 4 — Moteur fiscal France
 
 Objectif : calculer les éléments 2086 dans les cas simples.
 
-Livrables :
+Statut : **à faire**.
 
-- détection des cessions imposables ;
+Livrables attendus :
+
+- détection des cessions imposables validées utilisateur ;
 - calcul selon la formule 150 VH bis ;
 - seuil de 305 € ;
 - résumé 3AN / 3BN ;
 - checklist 3916-bis.
 
-Statut : **à faire**.
-
 ### Phase 5 — Web app locale MVP
 
 Objectif : rendre l’outil utilisable par un non-développeur.
 
-Livrables :
+Statut : **à faire**.
+
+Livrables attendus :
 
 - écran d’accueil ;
 - import fichier ;
@@ -106,21 +113,19 @@ Livrables :
 - résultats ;
 - export.
 
-Statut : **à faire**.
-
 ### Phase 6 — Stabilisation
 
 Objectif : rendre le MVP publiable.
 
-Livrables :
+Statut : **à faire**.
+
+Livrables attendus :
 
 - tests ;
 - documentation utilisateur ;
 - avertissement fiscal ;
-- jeu de démo ;
+- jeu de démo fictif ou procédure de test sans données ;
 - version taguée.
-
-Statut : **à faire**.
 
 ## 4. Règles de conduite projet
 
@@ -150,50 +155,50 @@ Si une idée ne contribue pas directement à sortir le MVP, elle va dans `later`
 
 Exception uniquement si elle corrige un risque fiscal, sécurité ou architecture critique.
 
-## 5. Backlog initial GitHub
+## 5. Issues validées
 
-### Issues créées
+- #1 Initialiser le dépôt et la documentation projet.
+- #2 Définir le format `NormalizedEvent` V0.
+- #3 Définir le schéma SQLite V0.
+- #4 Renforcer les règles agents, tests et sécurité.
+- #7 Créer l’import CSV Sparrow V0.
+- #9 Initialiser le projet TypeScript minimal.
+- #11 Implémenter le parseur CSV Sparrow V0.
+- #13 Créer une sortie d’import JSON alignée raw_rows et normalized_events.
+- #15 Créer une première commande CLI locale pour convertir un CSV Sparrow en JSON.
 
-1. Initialiser le dépôt et la documentation projet.
-2. Définir le format `NormalizedEvent` V0.
-3. Définir le schéma SQLite V0.
-4. Renforcer les règles agents, tests et sécurité.
+## 6. Issues à créer ensuite
 
-### Issues à créer ensuite
+Priorité immédiate :
 
-- Créer l’import CSV Sparrow.
+- Documenter un scénario de test manuel réel sans committer de données personnelles.
+
+Plus tard :
+
 - Créer l’import CSV générique.
-- Créer l’écran de revue des transactions.
+- Créer l’import manuel générique.
 - Créer la qualification fiscale manuelle.
 - Implémenter le calcul 2086 cas simple.
 - Générer l’export XLSX préparatoire.
 - Générer le résumé 2042 C.
 - Créer la checklist 3916-bis.
-- Ajouter les avertissements fiscaux.
+- Ajouter les avertissements fiscaux applicatifs.
 
-## 6. Labels GitHub recommandés
-
-- `mvp`
-- `later`
-- `research`
-- `tax-fr`
-- `importer`
-- `wallet`
-- `platform`
-- `ui`
-- `database`
-- `export`
-- `security`
-- `documentation`
-- `blocked`
-- `wontfix`
-
-## 7. Structure GitHub initiale
+## 7. Structure actuelle du dépôt
 
 ```text
 fiscalutxo/
 ├── README.md
 ├── AGENTS.md
+├── package.json
+├── tsconfig.json
+├── src/
+│   ├── cli/
+│   ├── domain/
+│   ├── importers/
+│   ├── imports/
+│   └── index.ts
+├── tests/
 ├── docs/
 │   ├── SOURCE_OF_TRUTH.md
 │   ├── ROADMAP.md
@@ -202,43 +207,26 @@ fiscalutxo/
 │   ├── SPEC_MVP_0_1.md
 │   ├── TAX_FR.md
 │   ├── IMPORTS.md
-│   └── ARCHITECTURE.md
+│   ├── ARCHITECTURE.md
+│   ├── CLI.md
+│   ├── NORMALIZED_EVENT.md
+│   ├── SQLITE_SCHEMA_V0.md
+│   └── importers/
+│       └── SPARROW_CSV_V0.md
 ├── .github/
-│   ├── pull_request_template.md
-│   └── ISSUE_TEMPLATE/
-│       ├── 00-agent-task.yml
-│       ├── feature.yml
-│       ├── bug.yml
-│       ├── research.yml
-│       └── scope_change.yml
 └── samples/
-    └── README.md
 ```
 
-## 8. Décision actuelle
+## 8. Étape en cours
 
-Le projet est créé sous le compte GitHub : **Copinmalin**.
+**Étape actuelle : Phase 2 — Test manuel réel contrôlé.**
 
-Dépôt :
+## 9. Prochaine action unique
+
+Créer et traiter une issue :
 
 ```text
-Copinmalin/fiscalutxo
+Documenter un scénario de test manuel réel sans committer de données personnelles
 ```
 
-## 9. Étape en cours
-
-**Étape actuelle : Phase 1 — Spécification MVP 0.1.**
-
-## 10. Prochaine action unique
-
-Traiter l’issue #2 : **Définir le format `NormalizedEvent` V0**.
-
-Instruction Codex recommandée :
-
-```text
-Lis AGENTS.md, docs/SOURCE_OF_TRUTH.md, docs/ROADMAP.md et docs/SPEC_MVP_0_1.md.
-Traite uniquement l’issue #2 : Définir le format NormalizedEvent V0.
-Ne crée pas d’interface.
-Ne crée pas encore la base SQLite.
-Produis une spécification TypeScript simple, documentée et testable.
-```
+Objectif : permettre de lancer la CLI dans VS Code avec un export Sparrow réel, tout en protégeant les données patrimoniales.
