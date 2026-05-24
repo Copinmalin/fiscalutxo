@@ -1,0 +1,33 @@
+name: Fonctionnalité MVP
+description: Proposer ou cadrer une fonctionnalité nécessaire au MVP
+title: "[MVP] "
+labels: ["mvp"]
+body:
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objectif
+      description: Quel problème cette tâche doit-elle résoudre ?
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Périmètre
+      description: Ce qui est inclus et exclu.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Critères d'acceptation
+      description: Comment sait-on que c'est terminé ?
+    validations:
+      required: true
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Contraintes
+      description: Scope, sécurité, fiscalité, architecture.
+    validations:
+      required: false
