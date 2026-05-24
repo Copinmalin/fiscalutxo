@@ -1,0 +1,24 @@
+name: Recherche
+description: Explorer un point avant décision
+title: "[RESEARCH] "
+labels: ["research"]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Question à résoudre
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Contexte
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Livrable attendu
+      description: Note, décision, comparaison, recommandation.
+    validations:
+      required: true
