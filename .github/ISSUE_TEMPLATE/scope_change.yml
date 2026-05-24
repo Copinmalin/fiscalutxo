@@ -1,0 +1,33 @@
+name: Changement de périmètre
+description: Proposer un changement de scope ou une fonctionnalité hors MVP
+title: "[SCOPE] "
+labels: ["later"]
+body:
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposition
+      description: Décrire le changement proposé.
+    validations:
+      required: true
+  - type: textarea
+    id: justification
+    attributes:
+      label: Justification
+      description: Expliquer pourquoi cette proposition mérite une discussion.
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact attendu
+      description: Fiscalité, sécurité, architecture, UX, import, export ou autre.
+    validations:
+      required: true
+  - type: textarea
+    id: risk
+    attributes:
+      label: Risque ou coût
+      description: Décrire la complexité, les risques ou les dépendances.
+    validations:
+      required: false
