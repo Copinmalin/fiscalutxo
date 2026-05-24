@@ -107,26 +107,19 @@ Choix recommandé :
 
 Le projet sera développé avec Codex dans Visual Studio Code.
 
-Le fichier `AGENTS.md` à la racine du dépôt est obligatoire. Il doit imposer les règles de scope, les commandes de test, les conventions de commit et la priorité MVP.
+Le fichier `AGENTS.md` à la racine du dépôt est obligatoire. Il impose les règles de scope, les commandes de test, les conventions de commit et la priorité MVP.
 
-Tout agent IA travaillant sur le projet doit respecter ces règles :
+Les règles détaillées sont dans :
 
-1. Lire cette source de vérité avant toute proposition.
-2. Refuser les ajouts hors MVP sauf issue dédiée `later`.
-3. Prioriser le chemin le plus court vers une application utilisable.
-4. Ne jamais transformer une idée en fonctionnalité sans critère d’acceptation.
-5. Ne jamais complexifier l’architecture sans bénéfice immédiat prouvé.
-6. Séparer clairement : MVP, amélioration, recherche, dette technique.
-7. Produire des petites tâches vérifiables, pas des chantiers flous.
-8. Ne pas modifier le périmètre fiscal sans justification documentée.
-9. Toute décision structurante doit être inscrite dans GitHub.
-10. À chaque étape, indiquer l’étape suivante unique à traiter.
+- `AGENTS.md` ;
+- `docs/AI_RULES.md` ;
+- `docs/TEST_SECURITY_CHECKLIST.md`.
 
 ## 8. Documents de pilotage
 
 Cette source de vérité doit rester courte.
 
-Les détails vivront dans des documents séparés :
+Les détails vivent dans des documents séparés :
 
 - `AGENTS.md` : instructions opérationnelles lues par Codex.
 - `docs/ROADMAP.md` : plan d’origine, suivi des étapes, prochaine action.
@@ -135,16 +128,20 @@ Les détails vivront dans des documents séparés :
 - `docs/IMPORTS.md` : formats CSV supportés.
 - `docs/ARCHITECTURE.md` : architecture technique.
 - `docs/AI_RULES.md` : règles détaillées pour agents IA.
+- `docs/TEST_SECURITY_CHECKLIST.md` : checklist tests et sécurité.
 
-## 9. Prochaine étape
+## 9. Statut de cadrage
 
-Créer ou compléter les premiers fichiers GitHub :
+Le cadrage initial du dépôt est en place :
 
-- `README.md`
-- `AGENTS.md`
-- `docs/SOURCE_OF_TRUTH.md`
-- `docs/ROADMAP.md`
-- `docs/AI_RULES.md`
-- templates d’issues GitHub
+- README ;
+- source de vérité ;
+- roadmap ;
+- règles agents ;
+- règles IA ;
+- checklist tests et sécurité ;
+- templates d’issues ;
+- template Pull Request ;
+- placeholders de documentation.
 
-Ensuite seulement : spécifier le MVP 0.1.
+La prochaine action produit est de traiter l’issue #2 : définir le format `NormalizedEvent` V0.
