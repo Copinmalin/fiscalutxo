@@ -35,6 +35,11 @@ CSV imports
 - SQLite ou stockage local équivalent.
 - Tauri plus tard si besoin desktop.
 
+## Contrats de données
+
+- [`docs/NORMALIZED_EVENT.md`](NORMALIZED_EVENT.md) : format canonique des événements normalisés.
+- [`docs/SQLITE_SCHEMA_V0.md`](SQLITE_SCHEMA_V0.md) : schéma local V0 pour sources, imports, lignes brutes, événements normalisés, classifications, préparations fiscales et audit.
+
 ## À décider
 
 - Framework UI.
@@ -42,3 +47,4 @@ CSV imports
 - Structure monorepo ou app simple.
 - Librairie d’export XLSX.
 - Format de sauvegarde JSON.
+- Stratégie de migrations exécutables.
