@@ -49,6 +49,8 @@ CSV Sparrow local
 
 La CLI est documentée dans [`docs/CLI.md`](docs/CLI.md).
 
+Le scénario de test manuel avec un export Sparrow local est documenté dans [`docs/MANUAL_REAL_TEST.md`](docs/MANUAL_REAL_TEST.md).
+
 ## Structure du dépôt
 
 ```text
@@ -74,6 +76,7 @@ fiscalutxo/
 │   ├── IMPORTS.md
 │   ├── ARCHITECTURE.md
 │   ├── CLI.md
+│   ├── MANUAL_REAL_TEST.md
 │   ├── NORMALIZED_EVENT.md
 │   ├── SQLITE_SCHEMA_V0.md
 │   └── importers/
@@ -104,6 +107,7 @@ fiscalutxo/
 - [`docs/IMPORTS.md`](docs/IMPORTS.md) : formats CSV et règles d’import.
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) : architecture technique cible.
 - [`docs/CLI.md`](docs/CLI.md) : usage de la CLI locale.
+- [`docs/MANUAL_REAL_TEST.md`](docs/MANUAL_REAL_TEST.md) : scénario de test manuel réel.
 - [`docs/NORMALIZED_EVENT.md`](docs/NORMALIZED_EVENT.md) : format canonique des événements normalisés.
 - [`docs/SQLITE_SCHEMA_V0.md`](docs/SQLITE_SCHEMA_V0.md) : schéma local V0 documenté.
 - [`docs/importers/SPARROW_CSV_V0.md`](docs/importers/SPARROW_CSV_V0.md) : contrat d’import CSV Sparrow.
