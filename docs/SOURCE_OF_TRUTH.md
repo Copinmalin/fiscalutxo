@@ -17,7 +17,7 @@ Objectif prioritaire : **sortir une application simple et utilisable rapidement*
 - Bitcoin uniquement.
 - Usage patrimonial privé.
 - Imports CSV.
-- Base locale.
+- Base locale ou structure locale équivalente.
 - Préparation 2086.
 - Résumé 2042 C : 3AN / 3BN / 3CN.
 - Checklist 3916-bis.
@@ -86,8 +86,9 @@ Imports prioritaires :
 
 ```text
 CSV imports
+→ Parsing
 → Normalisation
-→ Base locale
+→ Bundle local ou base locale
 → Qualification fiscale
 → Moteur fiscal France
 → Exports déclaratifs
@@ -95,25 +96,29 @@ CSV imports
 
 Choix recommandé :
 
-- Web app locale.
 - TypeScript.
-- SQLite ou stockage local équivalent.
-- Tauri possible ensuite pour desktop.
+- CLI locale pour valider le moteur.
+- Web app locale ensuite.
+- SQLite ou stockage local équivalent ensuite.
+- Tauri possible plus tard pour desktop.
 - Exports XLSX / CSV / JSON / PDF plus tard.
 - Développement dans Visual Studio Code avec Codex.
 - Instructions agents centralisées dans `AGENTS.md`.
 
-## 7. Règles pour agents IA
+## 7. État réel du dépôt
 
-Le projet sera développé avec Codex dans Visual Studio Code.
+Briques validées :
 
-Le fichier `AGENTS.md` à la racine du dépôt est obligatoire. Il impose les règles de scope, les commandes de test, les conventions de commit et la priorité MVP.
-
-Les règles détaillées sont dans :
-
-- `AGENTS.md` ;
-- `docs/AI_RULES.md` ;
-- `docs/TEST_SECURITY_CHECKLIST.md`.
+- gouvernance projet ;
+- règles agents IA ;
+- CI GitHub ;
+- TypeScript minimal ;
+- `NormalizedEvent` V0 ;
+- schéma local V0 documenté ;
+- spécification import CSV Sparrow V0 ;
+- parseur Sparrow V0 ;
+- bundle local d’import JSON ;
+- CLI locale Sparrow vers JSON.
 
 ## 8. Documents de pilotage
 
@@ -127,21 +132,10 @@ Les détails vivent dans des documents séparés :
 - `docs/TAX_FR.md` : règles fiscales françaises documentées.
 - `docs/IMPORTS.md` : formats CSV supportés.
 - `docs/ARCHITECTURE.md` : architecture technique.
+- `docs/CLI.md` : usage de la CLI locale.
 - `docs/AI_RULES.md` : règles détaillées pour agents IA.
 - `docs/TEST_SECURITY_CHECKLIST.md` : checklist tests et sécurité.
 
-## 9. Statut de cadrage
+## 9. Prochaine action unique
 
-Le cadrage initial du dépôt est en place :
-
-- README ;
-- source de vérité ;
-- roadmap ;
-- règles agents ;
-- règles IA ;
-- checklist tests et sécurité ;
-- templates d’issues ;
-- template Pull Request ;
-- placeholders de documentation.
-
-La prochaine action produit est de traiter l’issue #2 : définir le format `NormalizedEvent` V0.
+Documenter un scénario de test manuel réel, sans committer de données personnelles, pour lancer la CLI dans VS Code avec un export Sparrow utilisateur.
