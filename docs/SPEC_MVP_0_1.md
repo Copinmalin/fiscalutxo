@@ -37,17 +37,22 @@ Scénario :
 1. L’utilisateur importe un CSV.
 2. L’application conserve les lignes brutes.
 3. L’application convertit les opérations vers `NormalizedEvent`.
-4. L’utilisateur qualifie chaque opération ambiguë.
-5. L’application produit un tableau préparatoire.
-6. L’utilisateur exporte les résultats.
+4. L’application stocke les données dans la base locale V0.
+5. L’utilisateur qualifie chaque opération ambiguë.
+6. L’application produit un tableau préparatoire.
+7. L’utilisateur exporte les résultats.
 
-## Format canonique
+## Contrats de données
 
 Le format canonique minimal du MVP est défini dans :
 
 - [`docs/NORMALIZED_EVENT.md`](NORMALIZED_EVENT.md)
 
-Ce format sert de contrat entre les imports CSV, le stockage local, la qualification fiscale et les futurs exports.
+Le schéma local V0 est défini dans :
+
+- [`docs/SQLITE_SCHEMA_V0.md`](SQLITE_SCHEMA_V0.md)
+
+Ces deux documents servent de contrat entre les imports CSV, le stockage local, la qualification fiscale et les futurs exports.
 
 ## Critères d’acceptation
 
@@ -56,6 +61,7 @@ Le MVP 0.1 est acceptable si :
 - un CSV exemple peut être importé ;
 - les lignes brutes sont conservées ;
 - les opérations sont converties vers `NormalizedEvent` ;
+- les événements normalisés sont rattachables à leur source, import et ligne brute ;
 - les opérations ambiguës sont marquées `needs_review` ;
 - aucune donnée sensible de wallet n’est demandée ;
 - un export lisible est produit ;
@@ -63,4 +69,4 @@ Le MVP 0.1 est acceptable si :
 
 ## Prochaine étape
 
-Définir le schéma SQLite V0 en cohérence avec `NormalizedEvent`.
+Créer l’issue d’import CSV Sparrow ou préciser les fixtures d’exemple nécessaires au prototype moteur.
