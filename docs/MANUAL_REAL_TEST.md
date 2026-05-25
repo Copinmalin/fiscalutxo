@@ -57,14 +57,32 @@ Les trois commandes doivent passer avant le test réel.
 
 ---
 
-## 3. Exporter depuis Sparrow Wallet
+## 3. Préparer Sparrow avant export
+
+Pour un test propre, désactiver la source de taux FIAT dans Sparrow avant l’export :
+
+```text
+File
+→ Preferences
+→ Exchange rate source
+→ None
+```
+
+Objectif : exporter une vue wallet Bitcoin neutre, sans colonne `Value (EUR)` indicative.
+
+FiscalUTXO garde le support de `Value (EUR)` si elle existe déjà, mais cette colonne n’est pas recommandée pour le test réel. La valeur fiscale sera traitée plus tard par une source de prix contrôlée, une facture, un justificatif ou une qualification utilisateur.
+
+---
+
+## 4. Exporter depuis Sparrow Wallet
 
 Dans Sparrow Wallet :
 
 1. Ouvrir le wallet à tester.
-2. Aller dans l’onglet des transactions.
-3. Exporter les transactions au format CSV.
-4. Enregistrer le fichier dans un dossier local hors dépôt.
+2. Vérifier que `Exchange rate source = None`.
+3. Aller dans l’onglet des transactions.
+4. Exporter les transactions au format CSV.
+5. Enregistrer le fichier dans un dossier local hors dépôt.
 
 Exemple de chemin local :
 
@@ -76,7 +94,7 @@ Le CSV doit rester privé.
 
 ---
 
-## 4. Lancer la CLI vers stdout
+## 5. Lancer la CLI vers stdout
 
 Depuis le dépôt FiscalUTXO :
 
@@ -90,7 +108,7 @@ Ne copier-coller aucune sortie complète dans une issue GitHub.
 
 ---
 
-## 5. Lancer la CLI vers un fichier local
+## 6. Lancer la CLI vers un fichier local
 
 Pour produire un fichier JSON local :
 
@@ -106,7 +124,7 @@ Ne pas le déplacer dans le dépôt.
 
 ---
 
-## 6. Vérifier le JSON sans exposer les données
+## 7. Vérifier le JSON sans exposer les données
 
 Ouvrir le JSON localement et vérifier uniquement la structure.
 
@@ -122,7 +140,8 @@ Points à vérifier :
 [ ] Les sorties Sparrow restent manual_review + needs_review.
 [ ] Les entrées Sparrow restent manual_review + needs_review.
 [ ] Les lignes Unconfirmed sont marquées needs_review ou partial.
-[ ] Les valeurs EUR éventuelles sont présentes uniquement si la colonne Value (EUR) existe.
+[ ] L’export ne contient normalement pas Value (EUR) si Exchange rate source = None.
+[ ] Si Value (EUR) existe malgré tout, elle est traitée comme indicative seulement.
 [ ] Le fichier ne prétend pas calculer la plus-value fiscale.
 ```
 
@@ -130,7 +149,7 @@ Ne pas vérifier la justesse fiscale finale à ce stade : ce n’est pas encore 
 
 ---
 
-## 7. Vérifier l’état Git
+## 8. Vérifier l’état Git
 
 Après le test :
 
@@ -151,7 +170,7 @@ Ou déplacer le fichier hors dépôt.
 
 ---
 
-## 8. Nettoyage local optionnel
+## 9. Nettoyage local optionnel
 
 Après le test, supprimer les fichiers sensibles si nécessaire :
 
@@ -164,7 +183,7 @@ Garder ces fichiers seulement s’ils sont utiles pour continuer localement.
 
 ---
 
-## 9. Rapporter un bug sans exposer ses données
+## 10. Rapporter un bug sans exposer ses données
 
 Ne jamais ouvrir une issue avec le CSV réel ou le JSON réel.
 
@@ -175,6 +194,7 @@ Commande lancée :
 Système : Linux / macOS / Windows
 Version Node :
 Nombre de lignes CSV :
+Présence de Value (EUR) : oui / non
 Message d’erreur exact :
 Étape concernée : import / parsing / JSON / autre
 ```
@@ -202,7 +222,7 @@ Aucun CSV réel joint.
 
 ---
 
-## 10. Résultat attendu du test
+## 11. Résultat attendu du test
 
 Le test est réussi si :
 
@@ -211,13 +231,14 @@ Le test est réussi si :
 [ ] La CLI produit un JSON local.
 [ ] Le JSON contient rawRows et normalizedEvents.
 [ ] Les événements restent prudents fiscalement.
+[ ] Le CSV cible ne contient pas de colonne FIAT si Sparrow est configuré avec Exchange rate source = None.
 [ ] Aucun fichier sensible n’est présent dans git status.
 [ ] Aucun contenu personnel n’est publié dans GitHub.
 ```
 
 ---
 
-## 11. Décision après test
+## 12. Décision après test
 
 Après un premier test réel, décider de la prochaine action :
 

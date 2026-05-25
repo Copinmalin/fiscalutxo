@@ -13,7 +13,26 @@ La règle reste simple : le CSV réel et le JSON réel ne doivent jamais entrer 
 
 ---
 
-## 1. Option recommandée : GitHub Codespaces
+## 1. Recommandation Sparrow avant export
+
+Pour un test propre, il est recommandé de désactiver la source de taux FIAT dans Sparrow avant l’export :
+
+```text
+File
+→ Preferences
+→ Exchange rate source
+→ None
+```
+
+Objectif : obtenir une vue wallet Bitcoin neutre, sans colonne `Value (EUR)` indicative.
+
+FiscalUTXO garde le support de `Value (EUR)` si la colonne existe déjà, mais elle n’est pas recommandée comme base de test ni comme base fiscale.
+
+La valeur fiscale devra être traitée plus tard par une source de prix contrôlée, une facture, un justificatif ou une qualification utilisateur.
+
+---
+
+## 2. Option recommandée : GitHub Codespaces
 
 Codespaces permet d’ouvrir un environnement distant lié au dépôt, avec terminal et éditeur web.
 
@@ -40,7 +59,8 @@ npm run build
 mkdir -p ~/fiscalutxo-private-test
 ```
 
-7. Importer le fichier CSV Sparrow dans ce dossier via l’interface Codespaces.
+7. Vérifier dans Sparrow que `Exchange rate source = None`.
+8. Importer le fichier CSV Sparrow dans ce dossier via l’interface Codespaces.
 
 Chemin recommandé :
 
@@ -48,7 +68,7 @@ Chemin recommandé :
 ~/fiscalutxo-private-test/sparrow-transactions.csv
 ```
 
-8. Lancer la CLI :
+9. Lancer la CLI :
 
 ```bash
 npm run cli -- sparrow \
@@ -56,13 +76,13 @@ npm run cli -- sparrow \
   --out ~/fiscalutxo-private-test/fiscalutxo-sparrow-bundle.json
 ```
 
-9. Vérifier que Git ne voit aucun fichier sensible :
+10. Vérifier que Git ne voit aucun fichier sensible :
 
 ```bash
 git status
 ```
 
-10. Inspecter localement le JSON dans Codespaces sans le committer.
+11. Inspecter localement le JSON dans Codespaces sans le committer.
 
 Points à vérifier :
 
@@ -75,9 +95,11 @@ Points à vérifier :
 [ ] Les événements sont rattachés aux rawRows.
 [ ] Les sorties restent manual_review + needs_review.
 [ ] Les entrées restent manual_review + needs_review.
+[ ] L’export ne contient normalement pas Value (EUR) si Exchange rate source = None.
+[ ] Si Value (EUR) existe malgré tout, elle est traitée comme indicative seulement.
 ```
 
-11. Supprimer les fichiers sensibles avant de fermer le Codespace :
+12. Supprimer les fichiers sensibles avant de fermer le Codespace :
 
 ```bash
 rm -f ~/fiscalutxo-private-test/sparrow-transactions.csv
@@ -86,7 +108,7 @@ rm -f ~/fiscalutxo-private-test/fiscalutxo-sparrow-bundle.json
 
 ---
 
-## 2. Option de secours : GitHub Actions manuel
+## 3. Option de secours : GitHub Actions manuel
 
 Cette option utilise un secret GitHub contenant le CSV encodé en base64.
 
@@ -94,7 +116,9 @@ Elle est moins recommandée que Codespaces, car elle stocke temporairement une d
 
 À utiliser seulement si Codespaces n’est pas disponible.
 
-### 2.1 Préparer le secret
+### 3.1 Préparer le secret
+
+Avant d’encoder le CSV, vérifier dans Sparrow que `Exchange rate source = None`.
 
 Créer un secret GitHub nommé :
 
@@ -106,7 +130,7 @@ Sa valeur doit être le contenu base64 du CSV Sparrow.
 
 Ne jamais mettre ce secret dans un fichier du dépôt.
 
-### 2.2 Lancer le workflow
+### 3.2 Lancer le workflow
 
 Dans GitHub :
 
@@ -128,7 +152,7 @@ errors count
 
 Il ne doit pas afficher le CSV ni le JSON complet.
 
-### 2.3 Nettoyer après test
+### 3.3 Nettoyer après test
 
 Après le test, supprimer le secret :
 
@@ -138,7 +162,7 @@ SPARROW_CSV_BASE64
 
 ---
 
-## 3. Ce qu’il ne faut jamais publier
+## 4. Ce qu’il ne faut jamais publier
 
 Ne jamais publier dans une issue, PR ou log :
 
@@ -152,7 +176,7 @@ Ne jamais publier dans une issue, PR ou log :
 
 ---
 
-## 4. Comment rapporter un résultat
+## 5. Comment rapporter un résultat
 
 Partager uniquement :
 
@@ -162,6 +186,7 @@ Système :
 Node version :
 Lint/Test/Build : OK / KO
 CSV Sparrow lu : oui / non
+CSV avec Value (EUR) : oui / non
 JSON généré : oui / non
 rawRows count :
 normalizedEvents count :
@@ -173,7 +198,7 @@ Si une erreur contient des données personnelles, la réécrire sous forme anony
 
 ---
 
-## 5. Décision après test
+## 6. Décision après test
 
 Si le test passe : continuer vers la prochaine brique MVP.
 

@@ -67,6 +67,7 @@ Livrables validés ou en cours :
 - procédure de test manuel local ;
 - procédure de test distant sécurisé ;
 - workflow manuel GitHub Actions de secours ;
+- recommandation d’export Sparrow sans source de taux FIAT ;
 - règles d’anonymisation et non-commit ;
 - checklist de vérification du JSON produit ;
 - consignes de suppression locale ou distante des fichiers sensibles.
@@ -169,10 +170,12 @@ Exception uniquement si elle corrige un risque fiscal, sécurité ou architectur
 - #15 Créer une première commande CLI locale pour convertir un CSV Sparrow en JSON.
 - #17 Synchroniser la documentation après la CLI Sparrow V0.
 - #19 Documenter un scénario de test manuel réel sans données personnelles committées.
+- #21 Préparer un test distant sécurisé pour export Sparrow réel.
 
 ## 6. Issues en cours
 
-- #21 Préparer un test distant sécurisé pour export Sparrow réel.
+- #23 Intégrer la recommandation Sparrow sans FIAT.
+- #24 Étudier CryptoFiscaFacile comme référence externe.
 
 ## 7. Issues à créer ensuite
 
@@ -234,6 +237,6 @@ fiscalutxo/
 
 ## 10. Prochaine action unique
 
-Faire tourner la procédure `docs/REMOTE_REAL_TEST.md` avec Codespaces de préférence, ou avec le workflow GitHub Actions manuel en secours.
+Faire tourner la procédure `docs/REMOTE_REAL_TEST.md` avec un export Sparrow configuré avec `Exchange rate source = None`.
 
 Objectif : obtenir un retour réel sur le parseur avant de créer une nouvelle fonctionnalité.
