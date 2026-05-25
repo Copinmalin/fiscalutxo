@@ -1,0 +1,81 @@
+name: Remote real Sparrow test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sparrow-test:
+    name: Remote real Sparrow test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm run test
+
+      - name: Build
+        run: npm run build
+
+      - name: Decode private Sparrow CSV
+        env:
+          SPARROW_CSV_BASE64: ${{ secrets.SPARROW_CSV_BASE64 }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${SPARROW_CSV_BASE64:-}" ]; then
+            echo "Missing secret SPARROW_CSV_BASE64."
+            exit 1
+          fi
+          mkdir -p "$RUNNER_TEMP/fiscalutxo-private-test"
+          printf '%s' "$SPARROW_CSV_BASE64" | base64 --decode > "$RUNNER_TEMP/fiscalutxo-private-test/sparrow-transactions.csv"
+
+      - name: Run FiscalUTXO CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run cli -- sparrow \
+            "$RUNNER_TEMP/fiscalutxo-private-test/sparrow-transactions.csv" \
+            --out "$RUNNER_TEMP/fiscalutxo-private-test/fiscalutxo-sparrow-bundle.json"
+
+      - name: Print anonymized summary
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import { readFile } from 'node:fs/promises'
+
+          const path = `${process.env.RUNNER_TEMP}/fiscalutxo-private-test/fiscalutxo-sparrow-bundle.json`
+          const bundle = JSON.parse(await readFile(path, 'utf8'))
+
+          const summary = {
+            schemaVersion: bundle.schemaVersion,
+            importStatus: bundle.import?.importStatus,
+            rawRowsCount: Array.isArray(bundle.rawRows) ? bundle.rawRows.length : null,
+            normalizedEventsCount: Array.isArray(bundle.normalizedEvents) ? bundle.normalizedEvents.length : null,
+            errorsCount: Array.isArray(bundle.errors) ? bundle.errors.length : null,
+          }
+
+          console.log(JSON.stringify(summary, null, 2))
+          NODE
+
+      - name: Cleanup private files
+        if: always()
+        shell: bash
+        run: |
+          rm -rf "$RUNNER_TEMP/fiscalutxo-private-test"
