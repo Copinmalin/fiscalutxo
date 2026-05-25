@@ -36,7 +36,30 @@ La colonne fiat n’est présente que si une devise fiat est configurée et disp
 
 Le même fichier indique que les valeurs fiat historiques sont basées sur des taux journaliers et doivent être considérées comme approximatives.
 
-## 3. Périmètre V0
+---
+
+## 3. Recommandation d’export Sparrow
+
+Pour un test propre avec FiscalUTXO, il est recommandé d’exporter Sparrow **sans source de taux FIAT configurée**.
+
+Dans Sparrow Wallet :
+
+```text
+File
+→ Preferences
+→ Exchange rate source
+→ None
+```
+
+Objectif : produire un export wallet Bitcoin le plus neutre possible, sans mélanger le flux d’import avec une valeur fiat indicative.
+
+Cette recommandation n’empêche pas FiscalUTXO de lire `Value (EUR)` si la colonne existe déjà. La colonne reste supportée en V0 pour compatibilité, mais elle n’est pas recommandée comme base fiscale.
+
+La valeur fiscale devra être traitée plus tard par une source de prix contrôlée, une facture, un justificatif ou une qualification utilisateur.
+
+---
+
+## 4. Périmètre V0
 
 ### Inclus
 
@@ -44,7 +67,7 @@ Le même fichier indique que les valeurs fiat historiques sont basées sur des t
 - Bitcoin uniquement.
 - Dates UTC.
 - Valeurs BTC ou sats selon configuration Sparrow.
-- Valeur fiat optionnelle.
+- Valeur fiat optionnelle, supportée mais non recommandée.
 - Conservation des lignes brutes.
 - Conversion défensive vers `NormalizedEvent`.
 - Classement fiscal prudent.
@@ -61,9 +84,9 @@ Le même fichier indique que les valeurs fiat historiques sont basées sur des t
 
 ---
 
-## 4. Colonnes attendues
+## 5. Colonnes attendues
 
-## 4.1 Colonnes obligatoires
+## 5.1 Colonnes obligatoires
 
 | Colonne Sparrow | Obligatoire | Usage FiscalUTXO |
 |---|---:|---|
@@ -74,7 +97,7 @@ Le même fichier indique que les valeurs fiat historiques sont basées sur des t
 | `Fee` | Oui | `fee.amountSats` si renseigné. |
 | `Txid` | Oui | `txid`. Donnée sensible à traiter avec prudence. |
 
-## 4.2 Colonne fiat optionnelle
+## 5.2 Colonne fiat optionnelle
 
 | Colonne Sparrow | Obligatoire | Usage FiscalUTXO |
 |---|---:|---|
@@ -82,9 +105,11 @@ Le même fichier indique que les valeurs fiat historiques sont basées sur des t
 
 Règle : si la colonne fiat existe mais n’est pas `Value (EUR)`, elle est conservée dans la ligne brute mais non convertie en montant EUR V0.
 
+Règle de préférence : pour les tests FiscalUTXO, exporter Sparrow avec `Exchange rate source = None` afin de ne pas générer cette colonne.
+
 ---
 
-## 5. Détection du format
+## 6. Détection du format
 
 Un fichier est candidat Sparrow Transactions CSV si :
 
@@ -97,15 +122,15 @@ Un fichier est candidat Sparrow Transactions CSV si :
 [ ] Il contient Txid.
 ```
 
-La présence de `Value (EUR)` est optionnelle.
+La présence de `Value (EUR)` est optionnelle et non recommandée pour les tests propres.
 
 Si les colonnes obligatoires ne sont pas présentes, l’import doit être refusé ou classé `failed` avec un message lisible.
 
 ---
 
-## 6. Parsing des champs
+## 7. Parsing des champs
 
-## 6.1 Date
+## 7.1 Date
 
 Sparrow exporte les dates confirmées au format :
 
@@ -135,7 +160,7 @@ Règle V0 :
 - ne pas inventer de date confirmée ;
 - utiliser une date technique d’import uniquement dans les métadonnées, pas comme date fiscale.
 
-## 6.2 Value
+## 7.2 Value
 
 `Value` représente la variation nette du wallet pour cette transaction.
 
@@ -154,7 +179,7 @@ La valeur peut être exportée :
 
 Règle V0 : l’importeur doit accepter les deux formes, mais convertir en `quantitySats` entier.
 
-## 6.3 Balance
+## 7.3 Balance
 
 `Balance` est le solde wallet après transaction selon Sparrow.
 
@@ -166,7 +191,7 @@ Règle V0 :
 
 Important : le portefeuille fiscal français peut inclure d’autres wallets ou plateformes. Le solde Sparrow n’est donc pas la valeur globale du portefeuille fiscal.
 
-## 6.4 Fee
+## 7.4 Fee
 
 `Fee` représente les frais réseau calculés par Sparrow si disponibles.
 
@@ -177,7 +202,7 @@ Règles :
 - frais non disponible : ne pas inventer ;
 - frais coinbase éventuels : à revoir si rencontré.
 
-## 6.5 Value (EUR)
+## 7.5 Value (EUR)
 
 Si la colonne `Value (EUR)` existe, Sparrow la calcule à partir de taux historiques journaliers.
 
@@ -189,9 +214,11 @@ Règles V0 :
 - marquer comme valeur indicative ;
 - ne jamais traiter cette valeur comme preuve fiscale suffisante pour un paiement commerçant ou une vente plateforme.
 
-Pour une dépense réelle, la valeur de référence doit plutôt venir d’une facture, ticket ou saisie utilisateur.
+Position produit : cette colonne reste supportée, mais elle n’est pas recommandée pour le test propre de l’import Sparrow. L’export cible doit plutôt être produit avec `Exchange rate source = None`.
 
-## 6.6 Txid
+Pour une dépense réelle, la valeur de référence doit plutôt venir d’une facture, d’un ticket, d’une source de prix contrôlée ou d’une saisie utilisateur qualifiée.
+
+## 7.6 Txid
 
 `Txid` est conservé dans `txid`.
 
@@ -203,9 +230,9 @@ Règles sécurité :
 
 ---
 
-## 7. Conversion vers NormalizedEvent
+## 8. Conversion vers NormalizedEvent
 
-## 7.1 Entrée nette positive
+## 8.1 Entrée nette positive
 
 Condition :
 
@@ -234,7 +261,7 @@ Parce qu’une entrée Sparrow peut être :
 
 Sparrow seul ne suffit pas à trancher.
 
-## 7.2 Sortie nette négative
+## 8.2 Sortie nette négative
 
 Condition :
 
@@ -262,7 +289,7 @@ Parce qu’une sortie Sparrow peut être :
 
 Règle absolue : une sortie Sparrow n’est jamais automatiquement une cession imposable.
 
-## 7.3 Valeur nulle
+## 8.3 Valeur nulle
 
 Condition :
 
@@ -284,7 +311,7 @@ Ajouter une raison :
 Valeur nette nulle détectée dans l’export Sparrow.
 ```
 
-## 7.4 Frais seuls
+## 8.4 Frais seuls
 
 Si une ligne permet d’identifier uniquement des frais, l’événement doit rester prudent :
 
@@ -298,7 +325,7 @@ Le rattachement des frais à une cession imposable est hors V0.
 
 ---
 
-## 8. Préqualification par label
+## 9. Préqualification par label
 
 Le label Sparrow peut aider, mais ne doit pas forcer une qualification fiscale sans validation utilisateur.
 
@@ -321,9 +348,9 @@ Règle V0 :
 
 ---
 
-## 9. Mapping vers les tables V0
+## 10. Mapping vers les tables V0
 
-## 9.1 `sources`
+## 10.1 `sources`
 
 Créer ou réutiliser une source :
 
@@ -335,7 +362,7 @@ is_french_platform = 0
 requires_3916_review = 0
 ```
 
-## 9.2 `imports`
+## 10.2 `imports`
 
 Créer un import avec :
 
@@ -348,11 +375,11 @@ row_count
 error_count
 ```
 
-## 9.3 `raw_rows`
+## 10.3 `raw_rows`
 
 Chaque ligne CSV doit être conservée sous forme structurée.
 
-Exemple logique :
+Exemple logique avec colonne FIAT optionnelle :
 
 ```json
 {
@@ -366,9 +393,11 @@ Exemple logique :
 }
 ```
 
+Pour un test propre, l’export cible ne devrait normalement pas contenir `Value (EUR)`.
+
 Pas de fixture réelle dans le dépôt.
 
-## 9.4 `normalized_events`
+## 10.4 `normalized_events`
 
 Créer un événement par ligne parsée exploitable.
 
@@ -384,7 +413,7 @@ taxable_status = needs_review par défaut
 source_id / import_id / raw_row_id obligatoires
 ```
 
-## 9.5 `fiscal_classifications`
+## 10.5 `fiscal_classifications`
 
 Créer une classification initiale :
 
@@ -404,9 +433,9 @@ user_validated = 0
 
 ---
 
-## 10. Erreurs et anomalies
+## 11. Erreurs et anomalies
 
-## 10.1 Colonnes manquantes
+## 11.1 Colonnes manquantes
 
 Si une colonne obligatoire manque :
 
@@ -416,7 +445,7 @@ raw_rows = conservées si possible
 message = colonne obligatoire manquante
 ```
 
-## 10.2 Date invalide
+## 11.2 Date invalide
 
 ```text
 parse_status = needs_review ou error
@@ -425,14 +454,14 @@ normalized_event non créé si aucune date exploitable
 
 Exception : `Unconfirmed`, traité séparément.
 
-## 10.3 Montant invalide
+## 11.3 Montant invalide
 
 ```text
 parse_status = error
 event non créé
 ```
 
-## 10.4 Txid manquant
+## 11.4 Txid manquant
 
 Si colonne présente mais valeur vide :
 
@@ -443,7 +472,7 @@ txid absent
 reviewReasons inclut Txid manquant
 ```
 
-## 10.5 Devise fiat non EUR
+## 11.5 Devise fiat non EUR
 
 Si une colonne `Value (USD)` ou autre existe :
 
@@ -455,7 +484,7 @@ reviewReasons inclut Devise fiat non EUR ignorée en V0
 
 ---
 
-## 11. Tests attendus sans fixture ajoutée
+## 12. Tests attendus sans fixture ajoutée
 
 Aucune fixture CSV ne doit être ajoutée dans cette issue.
 
@@ -475,29 +504,32 @@ Les tests futurs devront couvrir :
 [ ] Conserver Balance sans l’utiliser comme portefeuille fiscal global.
 [ ] Conserver Fee si parseable.
 [ ] Ignorer Value (USD) comme fiat EUR.
-[ ] Traiter Value (EUR) comme valeur indicative.
+[ ] Traiter Value (EUR) comme valeur indicative si elle existe.
+[ ] Recommander un export Sparrow sans colonne FIAT pour les tests réels.
 [ ] Conserver chaque ligne brute.
 ```
 
 ---
 
-## 12. Décisions V0
+## 13. Décisions V0
 
 | Sujet | Décision |
 |---|---|
 | Format cible | Export Transactions Sparrow CSV. |
 | Source de vérité colonnes | Code officiel `WalletTransactions.java`. |
+| Export recommandé | `Exchange rate source = None`. |
 | Fixtures | Aucune fixture dans cette issue. |
 | Sortie BTC | `manual_review` + `needs_review` par défaut. |
 | Entrée BTC | `manual_review` + `needs_review` par défaut. |
-| Fiat Sparrow | Indicatif, source prix `market_price`. |
+| Fiat Sparrow | Supporté si présent, indicatif, non recommandé. |
+| Valeur fiscale | À traiter plus tard via source contrôlée ou qualification utilisateur. |
 | Balance Sparrow | Conservée, non utilisée fiscalement. |
 | Txid | Conservé, sensible. |
 | Devise non EUR | Conservée en brut, ignorée dans `fiat`. |
 
 ---
 
-## 13. Limites assumées
+## 14. Limites assumées
 
 Sparrow ne connaît pas :
 
