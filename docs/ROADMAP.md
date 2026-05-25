@@ -56,7 +56,7 @@ Reste à faire plus tard dans cette phase :
 - critères complets d’acceptation fiscale ;
 - éventuels imports Paymium / Bitstack / StackinSat.
 
-### Phase 2 — Test manuel réel contrôlé
+### Phase 2 — Test réel contrôlé
 
 Objectif : tester le flux CLI avec un vrai export Sparrow utilisateur sans committer de données personnelles.
 
@@ -64,15 +64,16 @@ Statut : **en cours**.
 
 Livrables validés ou en cours :
 
-- procédure de test manuel ;
+- procédure de test manuel local ;
+- procédure de test distant sécurisé ;
+- workflow manuel GitHub Actions de secours ;
 - règles d’anonymisation et non-commit ;
-- commande VS Code / terminal ;
 - checklist de vérification du JSON produit ;
-- consignes de suppression locale des fichiers sensibles si nécessaire.
+- consignes de suppression locale ou distante des fichiers sensibles.
 
 ### Phase 3 — Prototype moteur élargi
 
-Objectif : améliorer le moteur après retour du test manuel.
+Objectif : améliorer le moteur après retour du test réel.
 
 Statut : **à faire**.
 
@@ -167,14 +168,15 @@ Exception uniquement si elle corrige un risque fiscal, sécurité ou architectur
 - #13 Créer une sortie d’import JSON alignée raw_rows et normalized_events.
 - #15 Créer une première commande CLI locale pour convertir un CSV Sparrow en JSON.
 - #17 Synchroniser la documentation après la CLI Sparrow V0.
+- #19 Documenter un scénario de test manuel réel sans données personnelles committées.
 
 ## 6. Issues en cours
 
-- #19 Documenter un scénario de test manuel réel sans données personnelles committées.
+- #21 Préparer un test distant sécurisé pour export Sparrow réel.
 
 ## 7. Issues à créer ensuite
 
-Après retour du test manuel :
+Après retour du test réel :
 
 - Corriger le parseur Sparrow si le format réel diffère.
 - Améliorer les messages d’erreur utilisateur si nécessaire.
@@ -217,6 +219,7 @@ fiscalutxo/
 │   ├── ARCHITECTURE.md
 │   ├── CLI.md
 │   ├── MANUAL_REAL_TEST.md
+│   ├── REMOTE_REAL_TEST.md
 │   ├── NORMALIZED_EVENT.md
 │   ├── SQLITE_SCHEMA_V0.md
 │   └── importers/
@@ -227,10 +230,10 @@ fiscalutxo/
 
 ## 9. Étape en cours
 
-**Étape actuelle : Phase 2 — Test manuel réel contrôlé.**
+**Étape actuelle : Phase 2 — Test réel contrôlé.**
 
 ## 10. Prochaine action unique
 
-Faire tourner la procédure `docs/MANUAL_REAL_TEST.md` localement avec un vrai export Sparrow, sans committer de données personnelles.
+Faire tourner la procédure `docs/REMOTE_REAL_TEST.md` avec Codespaces de préférence, ou avec le workflow GitHub Actions manuel en secours.
 
 Objectif : obtenir un retour réel sur le parseur avant de créer une nouvelle fonctionnalité.
