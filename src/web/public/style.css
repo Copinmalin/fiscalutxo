@@ -56,3 +56,4 @@ dialog .input-grid{gap:0 1rem}
 #row-summary{color:var(--muted);overflow-wrap:anywhere}
 [hidden]{display:none!important}
 @media(max-width:680px){.header{flex-wrap:wrap}.header nav{order:3;width:100%}.intro{align-items:start;flex-direction:column;gap:.8rem}.panels,.input-grid{grid-template-columns:1fr}.panels>div+div{padding:1rem 0 0;border-left:0;border-top:1px solid var(--line)}.account-form{grid-template-columns:1fr 5rem}.account-form label:nth-child(3){grid-column:1/-1}.file-actions{flex-wrap:wrap}}
+.result-actions,.exports{flex-wrap:wrap}

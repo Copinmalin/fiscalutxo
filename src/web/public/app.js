@@ -387,7 +387,8 @@ $('calculate').addEventListener('click', () => void task(async () => {
 for (const node of document.querySelectorAll('[data-format]')) {
   node.addEventListener('click', () => void task(async () => {
     const format = node.dataset.format
-    download(await request('export', { project, format }, true), 'fiscalutxo-2026.' + format)
+    const filename = format === 'pdf' ? 'fiscalutxo-aide-2086-2026.pdf' : 'fiscalutxo-2026.' + format
+    download(await request('export', { project, format }, true), filename)
     status('Rapport ' + format.toUpperCase() + ' téléchargé.')
   }))
 }

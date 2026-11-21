@@ -25,9 +25,19 @@ await build({
 
 const page = await readFile(source + '/index.html', 'utf8')
 const csp = `default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'`
-const dependencies = ['@noble/hashes', 'csv-parse', 'fflate', 'zod']
-const licenses = await Promise.all(dependencies.map(async name =>
-  name + '\n\n' + await readFile('node_modules/' + name + '/LICENSE', 'utf8')))
+const licensePaths = {
+  '@noble/hashes': '@noble/hashes/LICENSE',
+  'csv-parse': 'csv-parse/LICENSE',
+  'fflate': 'fflate/LICENSE',
+  'zod': 'zod/LICENSE',
+  'pdf-lib': 'pdf-lib/LICENSE.md',
+  '@pdf-lib/standard-fonts': '@pdf-lib/standard-fonts/LICENSE.md',
+  '@pdf-lib/upng': '@pdf-lib/upng/LICENSE',
+  'pako': 'pako/LICENSE',
+  'tslib': 'pdf-lib/node_modules/tslib/LICENSE.txt',
+}
+const licenses = await Promise.all(Object.entries(licensePaths).map(async ([name, path]) =>
+  name + '\n\n' + await readFile('node_modules/' + path, 'utf8')))
 await Promise.all([
   writeFile(output + '/index.html', page.replace('<head>', '<head>\n  <meta http-equiv="Content-Security-Policy" content="' + csp + '">')),
   copyFile(source + '/style.css', output + '/style.css'),

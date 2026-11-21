@@ -1,15 +1,9 @@
 import { ZodError, z } from 'zod'
 import { demoProject, emptyProject, importInputSchema, ingest, projectSchema } from '../mvp/project.js'
 import { calculate } from '../mvp/tax.js'
-import { exportReport } from '../mvp/export.js'
+import { generateReport, reportFormats, reportMimeTypes } from '../mvp/export.js'
 
-const exportSchema = z.object({ project: projectSchema, format: z.enum(['json', 'csv', 'xlsx']) })
-const mimes = {
-  json: 'application/json',
-  csv: 'text/csv',
-  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-}
-
+const exportSchema = z.object({ project: projectSchema, format: z.enum(reportFormats) })
 // GitHub Pages serves only the application assets. Requests from the UI run locally.
 export async function request(path: string, data?: unknown) {
   try {
@@ -28,8 +22,8 @@ export async function request(path: string, data?: unknown) {
         const { project, format } = exportSchema.parse(data)
         const result = calculate(project)
         if (!result.ready) throw new Error('Complétez le dossier avant l’export fiscal.')
-        const report = exportReport(result, format)
-        return new Blob([typeof report === 'string' ? report : new Uint8Array(report)], { type: mimes[format] })
+        const report = await generateReport(result, format)
+        return new Blob([typeof report === 'string' ? report : new Uint8Array(report)], { type: reportMimeTypes[format] })
       }
       default: throw new Error('Action inconnue')
     }

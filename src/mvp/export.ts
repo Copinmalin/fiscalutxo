@@ -1,6 +1,20 @@
 import { strToU8, zipSync } from 'fflate'
 import type { Calculation } from './tax.js'
 
+export const reportFormats = ['json', 'csv', 'xlsx', 'pdf'] as const
+export const reportMimeTypes = {
+  json: 'application/json; charset=utf-8',
+  csv: 'text/csv; charset=utf-8',
+  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  pdf: 'application/pdf',
+} as const
+
+export async function generateReport(result: Calculation, format: typeof reportFormats[number]) {
+  if (format !== 'pdf') return exportReport(result, format)
+  const { export2086Pdf } = await import('./pdf-2086.js')
+  return export2086Pdf(result)
+}
+
 type Cell = string | number | null
 
 type Sheet = [string, Cell[][]]

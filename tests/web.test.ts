@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { once } from 'node:events'
-import { emptyProject } from '../src/mvp/project.js'
+import { PDFDocument } from 'pdf-lib'
+import { demoProject, emptyProject } from '../src/mvp/project.js'
 import { request as browserRequest } from '../src/web/browser-transport.js'
 import { createLocalServer } from '../src/web/server.js'
 
@@ -13,6 +14,12 @@ it('calcule et exporte l’exemple statique sans serveur', async () => {
   expect(report).toBeInstanceOf(Blob)
   if (report instanceof Blob) {
     expect(new Uint8Array(await report.arrayBuffer()).slice(0, 2)).toEqual(new Uint8Array([80, 75]))
+  }
+  const pdf = await browserRequest('export', { project, format: 'pdf' })
+  expect(pdf).toBeInstanceOf(Blob)
+  if (pdf instanceof Blob) {
+    expect(pdf.type).toBe('application/pdf')
+    expect((await PDFDocument.load(await pdf.arrayBuffer())).getPageCount()).toBe(1)
   }
   await expect(browserRequest('export', { project: emptyProject(), format: 'csv' })).rejects.toThrow('Complétez le dossier')
 })
@@ -43,5 +50,9 @@ describe('serveur local', () => {
     const exportResponse = await request('export', { project: { ...emptyProject(), complete: true, accountsReviewed: true }, format: 'xlsx' })
     expect(exportResponse.status).toBe(200)
     expect(new Uint8Array(await exportResponse.arrayBuffer()).slice(0, 2)).toEqual(new Uint8Array([80, 75]))
+    const pdfResponse = await request('export', { project: demoProject(), format: 'pdf' })
+    expect(pdfResponse.status).toBe(200)
+    expect(pdfResponse.headers.get('content-type')).toBe('application/pdf')
+    expect((await PDFDocument.load(await pdfResponse.arrayBuffer())).getPageCount()).toBe(1)
   })
 })
