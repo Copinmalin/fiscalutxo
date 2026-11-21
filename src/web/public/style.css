@@ -53,13 +53,13 @@ th{position:sticky;top:0;background:#e8efe9;white-space:nowrap}
 dialog{width:min(44rem,calc(100% - 2rem));max-height:calc(100% - 2rem);overflow:auto;border:1px solid var(--line);border-radius:.65rem;padding:1.25rem;color:var(--ink)}
 dialog::backdrop{background:#1b302c80}
 dialog .input-grid{gap:0 1rem}
-.operation-summary{display:grid;grid-template-columns:minmax(0,.55fr) minmax(0,1.3fr) minmax(0,1.5fr) repeat(2,minmax(0,1fr));gap:.5rem;margin:0 0 1rem}
+.operation-summary{display:grid;grid-template-columns:minmax(0,.55fr) minmax(0,1.5fr) repeat(2,minmax(0,1fr));gap:.5rem;margin:0 0 1rem}
 .operation-summary>div{background:#f4f8f4;border:1px solid var(--line);border-radius:.35rem;padding:.5rem .55rem;overflow-wrap:anywhere}
 .operation-summary dt{font-size:.78rem;font-weight:650;color:var(--muted)}
 .operation-summary small{display:block;font-size:.68rem;font-weight:400}
 .operation-summary dd{margin:.25rem 0 0;font-size:.9rem}
 #row-diagnostics{color:var(--error);padding-left:1.25rem;font-size:.86rem}
-@media(max-width:560px){.operation-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.operation-summary-label{grid-column:1/-1}}
+@media(max-width:560px){.operation-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
 #apply-label-suggestion{margin-bottom:.72rem}
 [hidden]{display:none!important}
 @media(max-width:680px){.header{flex-wrap:wrap}.header nav{order:3;width:100%}.intro{align-items:start;flex-direction:column;gap:.8rem}.panels,.input-grid{grid-template-columns:1fr}.panels>div+div{padding:1rem 0 0;border-left:0;border-top:1px solid var(--line)}.account-form{grid-template-columns:1fr 5rem}.account-form label:nth-child(3){grid-column:1/-1}.file-actions{flex-wrap:wrap}}

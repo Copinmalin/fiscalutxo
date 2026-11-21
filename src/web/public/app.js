@@ -225,7 +225,6 @@ function editOperation(entry = null) {
   $('row-summary').hidden = !entry?.row
   if (entry?.row) {
     $('row-line').textContent = entry.row.rowNumber
-    $('row-date').textContent = raw['Date (UTC)'] || raw.date_utc || entry.event?.occurredAt || '—'
     $('row-label').textContent = importedLabel(entry) || '—'
     $('row-sats').textContent = movementSats(entry.event?.quantitySats, entry.event?.direction)
     $('row-eur-estimate').textContent = estimatedEuros(entry.event) ?? '—'
