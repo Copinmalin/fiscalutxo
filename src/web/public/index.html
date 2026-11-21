@@ -62,7 +62,7 @@
       <p id="operations-empty">Importez un fichier ou ajoutez un achat, une vente ou un paiement.</p>
       <div class="table-scroll" id="table-scroll" hidden>
         <table>
-          <thead><tr><th scope="col">Source</th><th scope="col">Date UTC</th><th scope="col">Variation en sats</th><th scope="col">Qualification</th><th scope="col">Action</th></tr></thead>
+          <thead><tr><th scope="col">Source</th><th scope="col">Label</th><th scope="col">Date UTC</th><th scope="col">Variation en sats</th><th scope="col">Estimation EUR</th><th scope="col">Qualification</th><th scope="col">Action</th></tr></thead>
           <tbody id="operation-list"></tbody>
         </table>
       </div>
@@ -70,7 +70,9 @@
         <form id="operation-form">
           <div class="heading-row"><h3 id="operation-title">Qualifier l’opération</h3><button type="button" class="secondary" id="cancel-operation">Annuler</button></div>
           <p id="row-summary"></p>
-          <label>Qualification<select name="type"></select></label>
+          <p id="row-eur-estimate" hidden></p>
+          <button type="button" id="apply-label-suggestion" class="secondary" hidden></button>
+          <label>Qualification<select name="type" required></select></label>
           <div class="input-grid">
             <label data-field="date">Date et heure UTC<input name="date" type="datetime-local" step="1"></label>
             <label data-field="sats">Quantité réelle en sats<input name="sats" type="number" min="1" step="1"></label>

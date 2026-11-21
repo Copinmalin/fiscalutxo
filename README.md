@@ -23,7 +23,8 @@ npm start
 Ouvrir dans le navigateur l’adresse `http://127.0.0.1:…` affichée dans le terminal. Une fois les dépendances installées, l’application fonctionne hors ligne.
 
 1. Importer un CSV Sparrow, un CSV générique ou un bundle de la CLI. Utiliser un nom stable par wallet ou plateforme pour rapprocher les imports successifs.
-2. Confirmer l’état du portefeuille au 1er janvier 2026, puis qualifier les achats, ventes, paiements et transferts. Les montants EUR indicatifs de Sparrow servent à la revue. Les montants fiscaux proviennent de justificatifs renseignés par l’utilisateur.
+2. Confirmer l’état du portefeuille au 1er janvier 2026, puis qualifier les achats, ventes, paiements et transferts. Si l’export Sparrow contient `Value (EUR)`, sa contre-valeur s’affiche dans **Estimation EUR** et dans la fiche de qualification. Renseigner le prix fiscal à partir du justificatif.
+   La colonne **Label** reprend le libellé Sparrow. Un libellé explicite comme `Vente : plateforme` peut proposer une qualification cohérente avec le sens du mouvement. L’utilisateur la confirme dans la fiche.
 3. Renseigner les comptes concernés, confirmer la couverture du dossier et lancer le contrôle. Corriger les écarts affichés avant d’exporter le détail 2086, le résumé 2042 C et la checklist 3916-bis.
 4. Cliquer sur **Enregistrer le dossier** pour télécharger le JSON rechargeable. Le conserver dans un dossier privé hors du dépôt. Le bouton **Ouvrir** restaure les imports et les qualifications.
 

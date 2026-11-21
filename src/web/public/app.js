@@ -8,6 +8,12 @@ const labels = {
   transfert: 'Transfert personnel', doublon: 'Doublon',
   historique: 'Déjà inclus dans l’ouverture', post_cloture: 'Après la clôture', hors_perimetre: 'Hors périmètre',
 }
+const labelSuggestions = new Map([
+  ['achat', 'achat'], ['buy', 'achat'],
+  ['vente', 'vente'], ['sell', 'vente'],
+  ['paiement', 'paiement'], ['payment', 'paiement'],
+  ['transfert interne', 'transfert'], ['transfert personnel', 'transfert'], ['self transfer', 'transfert'],
+])
 const statuses = { imported: 'Importé', partial: 'À vérifier', failed: 'Échec' }
 const currency = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' })
 const money = cents => currency.format(cents / 100)
@@ -85,6 +91,29 @@ function rows() {
   })
 }
 
+function estimatedEuros(event) {
+  const fiat = event?.fiat
+  if (fiat?.currency !== 'EUR' || fiat.priceSource !== 'market_price' || !Number.isFinite(fiat.grossAmountCents)) {
+    return null
+  }
+  const cents = fiat.grossAmountCents
+  return money(event.direction === 'out' && cents > 0 ? -cents : cents)
+}
+
+function importedLabel(entry) {
+  return entry.event?.label || entry.row?.rawPayload.Label?.trim() || ''
+}
+
+function suggestedQualification(entry) {
+  const label = importedLabel(entry).split(':', 1)[0].trim().toLowerCase()
+  const proposal = labelSuggestions.get(label)
+  const direction = entry.event?.direction
+  if (proposal === 'achat' && direction === 'in') return proposal
+  if ((proposal === 'vente' || proposal === 'paiement') && direction === 'out') return proposal
+  if (proposal === 'transfert' && (direction === 'in' || direction === 'out')) return proposal
+  return null
+}
+
 function render() {
   const importNodes = project.imports.map(bundle => {
     const info = element('span', bundle.source.name + ' · ' + bundle.import.fileName + ' — ' +
@@ -112,12 +141,16 @@ function render() {
   for (const entry of operations) {
     const tr = element('tr')
     tr.dataset.id = entry.id
-    const label = entry.event?.label || entry.row?.rawPayload.Label || entry.row?.rawPayload.justificatif
-    tr.append(element('td', entry.title + (label ? ' · ' + label : '')))
+    const reference = entry.row?.rawPayload.justificatif
+    tr.append(element('td', entry.title + (reference ? ' · ' + reference : '')))
+    tr.append(element('td', importedLabel(entry) || '—'))
     tr.append(element('td', entry.operation?.date ?? entry.event?.occurredAt ?? 'À confirmer'))
     const quantity = entry.operation?.sats ?? entry.event?.quantitySats
     tr.append(element('td', quantity === undefined ? '—' : (entry.event?.direction === 'out' ? '−' : '') + quantity.toLocaleString('fr-FR')))
-    tr.append(element('td', entry.operation ? labels[entry.operation.type] : 'À revoir'))
+    tr.append(element('td', estimatedEuros(entry.event) ?? '—'))
+    const proposal = entry.operation ? null : suggestedQualification(entry)
+    tr.append(element('td', entry.operation ? labels[entry.operation.type] :
+      proposal ? 'Suggestion : ' + labels[proposal] : 'À revoir'))
     const action = element('td')
     action.append(button(entry.operation ? 'Modifier' : 'Qualifier', () => editOperation(entry)))
     tr.append(action)
@@ -173,8 +206,9 @@ function editOperation(entry = null) {
   operationForm.reset()
   const allowed = entry?.row ? Object.keys(labels) : ['achat', 'vente', 'paiement', 'hors_perimetre']
   fields.type.replaceChildren(...allowed.map(type => new Option(labels[type], type)))
+  if (entry?.row) fields.type.prepend(new Option('Choisir une qualification', ''))
   const proposal = raw.type === 'depot' || raw.type === 'retrait' ? 'transfert' : raw.type
-  fields.type.value = values.type ?? (allowed.includes(proposal) ? proposal : 'achat')
+  fields.type.value = values.type ?? (allowed.includes(proposal) ? proposal : entry?.row ? '' : 'achat')
   const sourceDate = entry?.event?.occurredAt ?? raw.date_utc ?? ''
   fields.date.value = (values.date ?? sourceDate ?? '').slice(0, 19)
   fields.sats.value = values.sats ?? entry?.event?.quantitySats ?? ''
@@ -188,6 +222,13 @@ function editOperation(entry = null) {
     ...entry.row.parseErrors,
     ...Object.entries(raw).map(([field, value]) => field + ' = ' + value),
   ].join(' · ') : 'Saisie manuelle'
+  const estimate = estimatedEuros(entry?.event)
+  $('row-eur-estimate').hidden = estimate === null
+  $('row-eur-estimate').textContent = estimate === null ? '' :
+    'Estimation EUR importée : ' + estimate + '. Le prix fiscal se renseigne dans le champ ci-dessous.'
+  const suggestion = entry?.row && !entry.operation ? suggestedQualification(entry) : null
+  $('apply-label-suggestion').hidden = !suggestion
+  $('apply-label-suggestion').textContent = suggestion ? 'Utiliser la suggestion : ' + labels[suggestion] : ''
   $('operation-error').textContent = ''
   $('clear-operation').hidden = !entry?.operation
   updateOperationFields(values.peer)
@@ -279,6 +320,12 @@ $('template').addEventListener('click', () => download(new Blob([
 
 $('add-operation').addEventListener('click', () => editOperation())
 $('cancel-operation').addEventListener('click', () => dialog.close())
+$('apply-label-suggestion').addEventListener('click', () => {
+  const proposal = selection && suggestedQualification(selection)
+  if (!proposal) return
+  operationForm.elements.type.value = proposal
+  updateOperationFields(operationForm.elements.peer.value)
+})
 operationForm.elements.type.addEventListener('change', () => updateOperationFields(operationForm.elements.peer.value))
 $('clear-operation').addEventListener('click', () => {
   delete project.operations[selection.id]
