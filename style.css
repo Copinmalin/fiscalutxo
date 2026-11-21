@@ -1,0 +1,58 @@
+:root{color-scheme:light;--bg:#f5f6f1;--paper:#fff;--ink:#1b302c;--muted:#48615a;--accent:#175b4c;--line:#cbd6cf;--warm:#fff1d2;--error:#9c352b;font-family:system-ui,sans-serif;color:var(--ink);background:var(--bg)}
+*{box-sizing:border-box}
+body{margin:0}
+.header{background:#e8efe9;min-height:4.25rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.7rem max(1rem,calc((100vw - 1060px)/2));border-bottom:1px solid var(--line)}
+.brand,.file-actions,.result-actions,.exports,.heading-row{display:flex;align-items:center;gap:.65rem}
+.brand{font-weight:750;font-size:1.17rem;white-space:nowrap}
+.brand-mark{display:grid;place-items:center;background:var(--accent);color:white;border-radius:50%;width:1.8rem;height:1.8rem;font-weight:600}
+nav{display:flex;gap:1.2rem}
+a{color:var(--accent);text-underline-offset:.2em}
+main,#status{max-width:1060px;margin:auto;padding-inline:1rem}
+#status{min-height:2.15rem;padding-top:.55rem;color:var(--muted);font-size:.9rem}
+#status.error,#operation-error,.import-status.error{color:var(--error)}
+.intro{display:flex;align-items:end;justify-content:space-between;gap:2rem;margin:1.1rem 0 1.6rem}
+.intro>p{max-width:34ch;margin:0 0 .3rem;color:var(--muted)}
+.eyebrow{color:var(--accent);font-weight:700;margin:0 0 .3rem}
+h1,h2,h3,p{margin-top:0}
+h1{font-size:clamp(2.1rem,6vw,3.75rem);line-height:1.05;letter-spacing:-.055em;margin-bottom:0}
+h2{font-size:1.55rem;letter-spacing:-.025em;margin-bottom:1rem}
+h3{font-size:1.03rem;margin-bottom:.8rem}
+section{padding:1.3rem;margin:0 0 1rem;background:var(--paper);border:1px solid var(--line);border-radius:.65rem;scroll-margin-top:1rem}
+.panels,.input-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.4rem}
+.panels>div+div{border-left:1px solid var(--line);padding-left:1.4rem}
+form label{display:flex;flex-direction:column;gap:.32rem;margin-bottom:.72rem;font-size:.87rem;font-weight:650}
+input,select,textarea,button{font:inherit}
+input:not([type=checkbox]),select,textarea{min-width:0;width:100%;color:var(--ink);padding:.48rem .58rem;border:1px solid #a8bbb1;border-radius:.35rem;background:#fbfdfb}
+input[type=file]{font-size:.82rem}
+.paste-import{margin-bottom:.72rem}
+.paste-import summary{color:var(--accent);cursor:pointer}
+.paste-import label{margin-top:.5rem}
+.import-status{color:var(--muted);margin:.65rem 0 0}
+.import-status:empty{margin:0}
+button{border:1px solid var(--accent);border-radius:.35rem;padding:.48rem .78rem;background:var(--accent);color:white;font-weight:650;cursor:pointer}
+button.secondary{background:#fff;color:var(--accent)}
+button:disabled{cursor:default;opacity:.52}
+:focus-visible{outline:2px solid #a04518;outline-offset:3px}
+.heading-row{justify-content:space-between;margin-bottom:.85rem}
+.heading-row h2,.heading-row h3{margin:0}
+.records{padding:0;margin:.75rem 0 0;list-style:none}
+.records li{padding:.4rem 0;border-top:1px solid var(--line);display:flex;gap:1rem;justify-content:space-between;align-items:center;overflow-wrap:anywhere}
+.table-scroll{max-height:32rem;overflow:auto}
+table{border-collapse:collapse;width:100%;text-align:left;font-size:.9rem}
+th,td{padding:.56rem .5rem;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
+th{position:sticky;top:0;background:#e8efe9;white-space:nowrap}
+.account-form{display:grid;grid-template-columns:2fr 5rem 2fr auto;gap:.65rem;align-items:end}
+.account-form button{margin-bottom:.72rem}
+.check{display:flex;align-items:baseline;gap:.5rem;margin:.9rem 0;font-weight:600}
+.check input{accent-color:var(--accent);flex-shrink:0}
+.result-actions{justify-content:space-between}
+#result:not(:empty){margin-top:1rem;background:#e8efe9;padding:1rem;border-radius:.4rem}
+#result p:last-child,#operation-error{margin-bottom:0}
+#result.pending{background:var(--warm)}
+#result li{margin:.25rem 0}
+dialog{width:min(44rem,calc(100% - 2rem));max-height:calc(100% - 2rem);overflow:auto;border:1px solid var(--line);border-radius:.65rem;padding:1.25rem;color:var(--ink)}
+dialog::backdrop{background:#1b302c80}
+dialog .input-grid{gap:0 1rem}
+#row-summary{color:var(--muted);overflow-wrap:anywhere}
+[hidden]{display:none!important}
+@media(max-width:680px){.header{flex-wrap:wrap}.header nav{order:3;width:100%}.intro{align-items:start;flex-direction:column;gap:.8rem}.panels,.input-grid{grid-template-columns:1fr}.panels>div+div{padding:1rem 0 0;border-left:0;border-top:1px solid var(--line)}.account-form{grid-template-columns:1fr 5rem}.account-form label:nth-child(3){grid-column:1/-1}.file-actions{flex-wrap:wrap}}

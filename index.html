@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FiscalUTXO · Dossier Bitcoin 2026</title>
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <header class="header">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">₿</span><span>FiscalUTXO</span></div>
+    <nav aria-label="Dossier"><a href="#imports">Imports</a><a href="#operations">Opérations</a><a href="#resultats">Résultats</a></nav>
+    <div class="file-actions">
+      <button id="load-demo" type="button" class="secondary">Essayer avec un exemple</button>
+      <button id="open-button" type="button" class="secondary">Ouvrir</button>
+      <input id="open-file" type="file" hidden>
+      <button id="save-button" type="button">Enregistrer le dossier</button>
+    </div>
+  </header>
+  <p id="status" role="status" aria-live="polite"></p>
+  <main id="workspace">
+    <div class="intro">
+      <div><p class="eyebrow">Année fiscale 2026</p><h1>Dossier Bitcoin</h1></div>
+      <p>Préparez l’annexe 2086 et retrouvez les montants à reporter. Les fichiers et les calculs restent sur cet appareil.</p>
+    </div>
+
+    <section id="imports" aria-labelledby="imports-title">
+      <h2 id="imports-title">Sources et état d’ouverture</h2>
+      <div class="panels">
+        <div>
+          <h3>Importer un fichier</h3>
+          <form id="import-form">
+            <label>Format<select name="format"><option value="sparrow">CSV Sparrow</option><option value="generique">CSV générique</option><option value="bundle">Bundle JSON de la CLI</option></select></label>
+            <label>Nom du wallet ou de la plateforme<input name="source" maxlength="120" placeholder="Ex. Sparrow épargne" required></label>
+            <label>Fichier<input name="file" type="file"></label>
+            <details class="paste-import">
+              <summary>Coller le contenu à la place</summary>
+              <label>Contenu du CSV ou du JSON<textarea name="content" rows="5" spellcheck="false" autocapitalize="off"></textarea></label>
+            </details>
+            <button>Importer</button>
+            <button type="button" class="secondary" id="template">Modèle CSV</button>
+          </form>
+          <p id="import-status" class="import-status" role="status"></p>
+          <ul id="import-list" class="records"></ul>
+        </div>
+        <div>
+          <h3>Situation au 1er janvier 2026</h3>
+          <form id="opening-form">
+            <label>Solde de tout le foyer en sats<input name="sats" type="number" min="0" step="1" required></label>
+            <label>Prix d’acquisition cumulés en €<input name="acquisitions" inputmode="decimal" required></label>
+            <label>Capital déjà consommé en €<input name="used" inputmode="decimal" required></label>
+            <label>Justificatif ou référence<input name="reference" maxlength="500" required></label>
+            <button>Valider l’état d’ouverture</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <section id="operations" aria-labelledby="operations-title">
+      <div class="heading-row"><h2 id="operations-title">Opérations</h2><button type="button" class="secondary" id="add-operation">Ajouter une opération</button></div>
+      <p id="operations-empty">Importez un fichier ou ajoutez un achat, une vente ou un paiement.</p>
+      <div class="table-scroll" id="table-scroll" hidden>
+        <table>
+          <thead><tr><th scope="col">Source</th><th scope="col">Date UTC</th><th scope="col">Variation en sats</th><th scope="col">Qualification</th><th scope="col">Action</th></tr></thead>
+          <tbody id="operation-list"></tbody>
+        </table>
+      </div>
+      <dialog id="operation-dialog" aria-labelledby="operation-title">
+        <form id="operation-form">
+          <div class="heading-row"><h3 id="operation-title">Qualifier l’opération</h3><button type="button" class="secondary" id="cancel-operation">Annuler</button></div>
+          <p id="row-summary"></p>
+          <label>Qualification<select name="type"></select></label>
+          <div class="input-grid">
+            <label data-field="date">Date et heure UTC<input name="date" type="datetime-local" step="1"></label>
+            <label data-field="sats">Quantité réelle en sats<input name="sats" type="number" min="1" step="1"></label>
+            <label data-field="gross" id="gross-label"><span>Prix en €</span><input name="gross" inputmode="decimal"></label>
+            <label data-field="fee">Frais de cession justifiés en €<input name="fee" inputmode="decimal" placeholder="0 si aucun"></label>
+            <label data-field="portfolio">Valeur globale avant cession en €<input name="portfolio" inputmode="decimal"></label>
+            <label data-field="valuationReference">Justificatif de la valorisation<input name="valuationReference" maxlength="500"></label>
+          </div>
+          <label>Justificatif ou référence<input name="reference" maxlength="500"></label>
+          <label data-field="peer"><span id="peer-label">Ligne liée</span><select name="peer"></select></label>
+          <p id="operation-error" role="alert"></p>
+          <button>Confirmer la qualification</button>
+          <button type="button" id="clear-operation" class="secondary">Retirer la qualification</button>
+        </form>
+      </dialog>
+    </section>
+
+    <section id="comptes" aria-labelledby="accounts-title">
+      <h2 id="accounts-title">Comptes à déclarer</h2>
+      <p>Renseignez l’entité qui tient le compte. Le pays suit l’entité contractante. Utilisez le code à deux lettres, par exemple FR ou DE.</p>
+      <form id="account-form" class="account-form">
+        <label>Entité<input name="entity" maxlength="500" required></label>
+        <label>Pays<input name="country" pattern="[A-Za-z]{2}" maxlength="2" required></label>
+        <label>Référence du compte<input name="reference" maxlength="200" required></label>
+        <button>Ajouter le compte</button>
+      </form>
+      <ul id="account-list" class="records"></ul>
+      <label class="check"><input type="checkbox" id="accounts-reviewed"> J’ai vérifié les comptes ouverts, détenus, utilisés ou clos en 2026.</label>
+    </section>
+
+    <section id="resultats" aria-labelledby="results-title">
+      <h2 id="results-title">Contrôle et exports</h2>
+      <label class="check"><input type="checkbox" id="complete"> J’ai réuni l’ensemble du portefeuille fiscal Bitcoin du foyer et de ses opérations. Aucun autre crypto-actif ou cas hors périmètre n’affecte ce calcul.</label>
+      <div class="result-actions"><button id="calculate" type="button">Contrôler le dossier</button>
+        <div class="exports" aria-label="Exporter le rapport">
+          <button type="button" class="secondary" data-format="csv" disabled>CSV</button>
+          <button type="button" class="secondary" data-format="json" disabled>JSON</button>
+          <button type="button" class="secondary" data-format="xlsx" disabled>XLSX</button>
+        </div>
+      </div>
+      <div id="result" aria-live="polite"></div>
+    </section>
+  </main>
+</body>
+</html>
