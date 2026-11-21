@@ -21,6 +21,9 @@ let project
 let dirty = false
 let busy = false
 let selection = null
+let priceDrafts = {}
+let priceKind = null
+let importedAcquisitionPrice = ''
 let ready = false
 
 function element(tag, text, className) {
@@ -91,17 +94,22 @@ function rows() {
   })
 }
 
-function estimatedEuros(event) {
+function indicativeCents(event) {
   const fiat = event?.fiat
   if (fiat?.currency !== 'EUR' || fiat.priceSource !== 'market_price' || !Number.isFinite(fiat.grossAmountCents)) {
     return null
   }
-  const cents = fiat.grossAmountCents
+  return fiat.grossAmountCents
+}
+
+function estimatedEuros(event) {
+  const cents = indicativeCents(event)
+  if (cents === null) return null
   return money(event.direction === 'out' && cents > 0 ? -cents : cents)
 }
 
 function importedLabel(entry) {
-  return entry.event?.label || entry.row?.rawPayload.Label?.trim() || ''
+  return entry?.event?.label || entry?.row?.rawPayload.Label?.trim() || ''
 }
 
 function movementSats(quantity, direction) {
@@ -146,8 +154,7 @@ function render() {
   for (const entry of operations) {
     const tr = element('tr')
     tr.dataset.id = entry.id
-    const reference = entry.row?.rawPayload.justificatif
-    tr.append(element('td', entry.title + (reference ? ' · ' + reference : '')))
+    tr.append(element('td', entry.bundle?.source.name ?? entry.title))
     tr.append(element('td', importedLabel(entry) || '—'))
     tr.append(element('td', entry.operation?.date ?? entry.event?.occurredAt ?? 'À confirmer'))
     const quantity = entry.operation?.sats ?? entry.event?.quantitySats
@@ -217,10 +224,22 @@ function editOperation(entry = null) {
   const sourceDate = entry?.event?.occurredAt ?? raw.date_utc ?? ''
   fields.date.value = (values.date ?? sourceDate ?? '').slice(0, 19)
   fields.sats.value = values.sats ?? entry?.event?.quantitySats ?? ''
-  fields.gross.value = values.gross === undefined ? raw.prix_eur ?? '' : values.gross / 100
+  priceDrafts = {}
+  priceKind = null
+  importedAcquisitionPrice = ''
+  const cents = indicativeCents(entry?.event)
+  if (entry?.event?.direction === 'in' && cents !== null) {
+    importedAcquisitionPrice = (cents / 100).toFixed(2).replace('.', ',')
+    priceDrafts.achat = importedAcquisitionPrice
+  }
+  const importedKind = grossKind(proposal)
+  if (importedKind && raw.prix_eur) priceDrafts[importedKind] = raw.prix_eur
+  const savedKind = grossKind(values.type)
+  if (savedKind && values.gross !== undefined) priceDrafts[savedKind] = String(values.gross / 100)
   fields.fee.value = values.fee === undefined ? raw.frais_eur ?? '' : values.fee / 100
   fields.portfolio.value = values.portfolio === undefined ? raw.portefeuille_eur ?? '' : values.portfolio / 100
-  fields.reference.value = values.reference ?? raw.justificatif ?? ''
+  fields.reference.value = values.reference ??
+    (raw.justificatif || importedLabel(entry)).slice(0, fields.reference.maxLength)
   fields.valuationReference.value = values.valuationReference ?? raw.valorisation ?? ''
   $('row-summary').hidden = !entry?.row
   if (entry?.row) {
@@ -241,10 +260,23 @@ function editOperation(entry = null) {
   dialog.showModal()
 }
 
+function grossKind(type) {
+  if (type === 'achat') return 'achat'
+  return type === 'vente' || type === 'paiement' ? 'cession' : null
+}
+
 function updateOperationFields(selectedPeer) {
   const fields = operationForm.elements
   const type = fields.type.value
   const disposal = type === 'vente' || type === 'paiement'
+  const nextPriceKind = grossKind(type)
+  if (priceKind !== nextPriceKind) {
+    if (priceKind) priceDrafts[priceKind] = fields.gross.value
+    fields.gross.value = nextPriceKind ? priceDrafts[nextPriceKind] ?? '' : ''
+    priceKind = nextPriceKind
+  }
+  $('acquisition-estimate-note').hidden = type !== 'achat' || !importedAcquisitionPrice ||
+    selection?.operation?.type === 'achat'
   const visible = {
     date: !['doublon', 'hors_perimetre'].includes(type),
     sats: !['doublon', 'historique', 'post_cloture', 'hors_perimetre'].includes(type),
