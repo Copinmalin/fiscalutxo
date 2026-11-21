@@ -1,6 +1,6 @@
 # Samples
 
-Ce dossier contiendra des fichiers CSV d’exemple anonymisés ou fictifs.
+[sparrow-demo.csv](sparrow-demo.csv) contient deux opérations fictives de 2025, un achat et une vente. Il permet de tester l’import Sparrow et la qualification pendant la campagne 2026. Le bouton **Essayer avec un exemple** reprend ce scénario.
 
 ## Règles
 

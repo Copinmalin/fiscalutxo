@@ -1,5 +1,5 @@
 import { ZodError, z } from 'zod'
-import { demoProject, emptyProject, importInputSchema, ingest, projectSchema } from '../mvp/project.js'
+import { demoProject, emptyProject, fiscalYearSchema, importInputSchema, ingest, projectSchema } from '../mvp/project.js'
 import { calculate } from '../mvp/tax.js'
 import { generateReport, reportFormats, reportMimeTypes } from '../mvp/export.js'
 
@@ -11,8 +11,8 @@ export async function request(path: string, data?: unknown) {
       throw new Error('Dossier ou import supérieur à 24 Mio')
     }
     switch (path) {
-      case 'new': return emptyProject()
-      case 'demo': return demoProject()
+      case 'new': return emptyProject(fiscalYearSchema.optional().parse(data))
+      case 'demo': return demoProject(fiscalYearSchema.optional().parse(data))
       case 'import': return ingest(importInputSchema.parse(data))
       case 'check': {
         const project = projectSchema.parse(data)

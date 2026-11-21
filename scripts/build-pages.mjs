@@ -18,6 +18,8 @@ await build({
   plugins: [{
     name: 'browser-transport',
     setup(build) {
+      build.onResolve({ filter: /^\.\/period\.js$/ }, args =>
+        args.importer === resolve(source + '/app.js') ? { path: resolve('src/mvp/period.ts') } : undefined)
       build.onResolve({ filter: /^\.\/transport\.js$/ }, () => ({ path: resolve('src/web/browser-transport.ts') }))
     },
   }],

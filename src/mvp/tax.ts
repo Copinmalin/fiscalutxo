@@ -1,4 +1,5 @@
-import { YEAR, YEAR_END, YEAR_START, type Operation, type Project } from './project.js'
+import type { Operation, Project } from './project.js'
+import { fiscalPeriod, importedDate, inFiscalPeriod } from './period.js'
 
 const PRECISION = 100_000_000n
 const THRESHOLD = 30_500n
@@ -25,10 +26,15 @@ export function calculate(project: Project) {
     if (bundle.import.importStatus === 'failed') block('Import illisible à corriger ou retirer', bundle.import.id)
   }
   const rows = sourceRows(project)
-  const byRow = new Map(rows.map(item => [item.row.id, item]))
+  const { start, end } = fiscalPeriod(project.year)
+  const outsideRows = new Set(rows.filter(item => {
+    const date = importedDate(item.row.rawPayload, item.event?.occurredAt)
+    return date && !inFiscalPeriod(date, project.year)
+  }).map(item => item.row.id))
+  const byRow = new Map(rows.filter(item => !outsideRows.has(item.row.id)).map(item => [item.row.id, item]))
   const activeKeys = new Set<string>()
   const exactDuplicates = new Map<string, string>()
-  for (const item of rows) {
+  for (const item of byRow.values()) {
     const txid = item.event?.txid ?? item.row.rawPayload.Txid ?? item.row.rawPayload.txid
     const transactionKey = txid?.trim()
       ? JSON.stringify([item.bundle.source.id, txid.trim().toLowerCase()])
@@ -45,6 +51,7 @@ export function calculate(project: Project) {
 
   const timeline: { id: string; operation: Operation & { date: string; sats: number; reference: string } }[] = []
   for (const [id, operation] of Object.entries(project.operations)) {
+    if (outsideRows.has(id)) continue
     if (operation.type === 'hors_perimetre') {
       block('Opération hors périmètre à traiter avant de déclarer', id)
       continue
@@ -62,9 +69,9 @@ export function calculate(project: Project) {
       continue
     }
     if (operation.type === 'historique' || operation.type === 'post_cloture') {
-      const rawDate = item?.event?.occurredAt
-      const inHistoricalPeriod = (value: string) => value.slice(0, 19) < YEAR_START.slice(0, 19)
-      const afterClosing = (value: string) => value.slice(0, 19) >= YEAR_END.slice(0, 19)
+      const rawDate = item && importedDate(item.row.rawPayload, item.event?.occurredAt)
+      const inHistoricalPeriod = (value: string) => Date.parse(value) < Date.parse(start)
+      const afterClosing = (value: string) => Date.parse(value) >= Date.parse(end)
       const inPeriod = operation.type === 'historique' ? inHistoricalPeriod : afterClosing
       if (!operation.date || !inPeriod(operation.date) || !operation.reference || !item || (rawDate && !inPeriod(rawDate))) {
         block(operation.type === 'historique' ? 'Justifiez l’inclusion de cette ligne dans l’état d’ouverture' :
@@ -77,14 +84,8 @@ export function calculate(project: Project) {
       block('Date, quantité et justificatif requis', id)
       continue
     }
-    if (date < YEAR_START || date >= YEAR_END) {
-      block('Date hors de l’année fiscale 2026', id)
-      continue
-    }
-    if (item?.event?.occurredAt && operation.type !== 'transfert' &&
-        (item.event.occurredAt.slice(0, 19) < YEAR_START.slice(0, 19) ||
-         item.event.occurredAt.slice(0, 19) >= YEAR_END.slice(0, 19))) {
-      block('La date source est hors de l’année fiscale. Vérifiez le traitement de cette ligne.', id)
+    if (!inFiscalPeriod(date, project.year)) {
+      block('Date hors de l’année des opérations (' + project.year + ')', id)
       continue
     }
     if (item?.event && (operation.type === 'achat' && item.event.direction !== 'in' ||
@@ -105,8 +106,8 @@ export function calculate(project: Project) {
       if (item.event?.direction === 'out') {
         const received = peer.operation?.sats ?? 0
         const feeSats = sats - received
-        const feeLines = Object.values(project.operations).filter(candidate =>
-          candidate.type === 'paiement' && candidate.peer === id && candidate.sats === feeSats && candidate.date === date)
+        const feeLines = Object.entries(project.operations).filter(([candidateId, candidate]) =>
+          !outsideRows.has(candidateId) && candidate.type === 'paiement' && candidate.peer === id && candidate.sats === feeSats && candidate.date === date)
         const reportedFee = item.event.fee?.amountSats
         if (!received || feeSats < 0 || (reportedFee !== undefined && feeSats !== reportedFee) ||
             (feeSats > 0 && feeLines.length !== 1)) {
@@ -185,7 +186,7 @@ export function calculate(project: Project) {
   const totalGain = assessable ? cent(gain) : null
   const foreignAccounts = project.accounts.filter(account => account.relevant && account.country !== 'FR')
   return {
-    year: YEAR, ready, blockers, proceeds: Number(proceeds), exempt: ready ? exempt : null,
+    year: project.year, ready, blockers, proceeds: Number(proceeds), exempt: ready ? exempt : null,
     disposals, totalGain, capitalRemaining: cent(acquisitions - used), remainingSats: Number(balance),
     report: { '3AN': totalGain && totalGain > 0 ? totalGain : null, '3BN': totalGain && totalGain < 0 ? -totalGain : null, '3CN': 'Choix utilisateur' },
     foreignAccounts,

@@ -1,4 +1,8 @@
 export async function request(path, data, download = false) {
+  if ((path === 'new' || path === 'demo') && data !== undefined) {
+    path += '?year=' + encodeURIComponent(data)
+    data = undefined
+  }
   const response = await fetch('/api/' + path, data === undefined ? {} : {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
   })

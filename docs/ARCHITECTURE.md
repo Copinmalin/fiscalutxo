@@ -6,7 +6,7 @@ L’application conserve les briques TypeScript d’import et utilise un serveur
 CSV Sparrow ou générique / bundle CLI
 → lignes sources et événements normalisés
 → dossier JSON et qualifications explicites
-→ calcul 2026
+→ calcul par année des opérations
 → détails 2086, synthèse 2042 C, checklist 3916-bis
 ```
 
