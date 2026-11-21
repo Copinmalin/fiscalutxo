@@ -23,6 +23,8 @@ Les imports doivent rester :
 | Bull Bitcoin | À vérifier après export réel | À créer |
 | CSV générique et saisie manuelle | Implémentés | Voir ci-dessous |
 
+Pour une sortie Sparrow confirmée, la fiche de qualification peut estimer le solde avant la cession en ajoutant la quantité sortie au solde indiqué dans `Balance (sats)` ou `Balance (BTC)`. Elle applique le cours journalier estimé d’après `Value (EUR)`. L’utilisateur ajoute les avoirs Bitcoin du foyer détenus ailleurs et choisit de reprendre le montant proposé. Le prix de cession et le justificatif de valorisation sont renseignés séparément.
+
 ## Exigences communes
 
 Chaque import doit conserver :

@@ -83,6 +83,9 @@ dialog .input-grid{gap:0 1rem}
 .operation-summary dd{margin:.25rem 0 0;font-size:.9rem}
 #row-diagnostics{color:var(--error);padding-left:1.25rem;font-size:.86rem}
 @media(max-width:560px){.operation-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+#portfolio-estimate{background:#f4f8f4;border:1px solid var(--line);border-radius:.35rem;padding:.65rem;margin:0 0 .85rem}
+#portfolio-estimate p{margin:0 0 .55rem}
+#portfolio-estimate-controls label{max-width:26rem}
 #apply-label-suggestion{margin-bottom:.72rem}
 [hidden]{display:none!important}
 @media(max-width:680px){.header{flex-wrap:wrap}.header nav{order:3;width:100%}.intro{align-items:start;flex-direction:column;gap:.8rem}.panels,.input-grid{grid-template-columns:1fr}.panels>div+div{padding:1rem 0 0;border-left:0;border-top:1px solid var(--line)}.account-form{grid-template-columns:1fr 5rem}.account-form label:nth-child(3){grid-column:1/-1}.file-actions{flex-wrap:wrap}}

@@ -97,6 +97,16 @@
             <label data-field="portfolio">Valeur globale avant cession en €<input name="portfolio" inputmode="decimal"></label>
             <label data-field="valuationReference">Justificatif de la valorisation<input name="valuationReference" maxlength="500"></label>
           </div>
+          <div id="portfolio-estimate" hidden>
+            <p id="portfolio-estimate-message" aria-live="polite"></p>
+            <div id="portfolio-estimate-controls" hidden>
+              <label>Autres avoirs Bitcoin du foyer à cette date, en sats
+                <input id="other-holdings" inputmode="numeric" maxlength="16" placeholder="0 si aucun" aria-describedby="portfolio-estimate-help">
+              </label>
+              <p id="portfolio-estimate-help"><small>Vérifiez que le total couvre tous les wallets et plateformes du foyer. Renseignez le justificatif de la valorisation séparément.</small></p>
+              <button id="apply-portfolio-estimate" type="button" class="secondary" disabled>Reprendre l’estimation</button>
+            </div>
+          </div>
           <label>Justificatif ou référence<input name="reference" maxlength="500"></label>
           <label data-field="peer"><span id="peer-label">Ligne liée</span><select name="peer"></select></label>
           <p id="operation-error" role="alert"></p>

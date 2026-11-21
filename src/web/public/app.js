@@ -25,6 +25,7 @@ let selection = null
 let priceDrafts = {}
 let priceKind = null
 let importedAcquisitionPrice = ''
+let appliedPortfolioEstimate = ''
 let ready = false
 
 function element(tag, text, className) {
@@ -112,6 +113,60 @@ function estimatedEuros(event) {
   const cents = indicativeCents(event)
   if (cents === null) return null
   return money(event.direction === 'out' && cents > 0 ? -cents : cents)
+}
+
+function importedWalletBalanceBefore(entry, date) {
+  const event = entry?.event
+  const sourceDate = event?.occurredAt
+  if (!sourceDate || Date.parse(date + 'Z') !== Date.parse(sourceDate) || event.direction !== 'out' || !event.quantitySats) return null
+
+  for (const [header, raw] of Object.entries(entry.row.rawPayload)) {
+    const unit = /^Balance \((BTC|sats?)\)$/i.exec(header)?.[1].toLowerCase()
+    if (!unit) continue
+    const value = raw.trim()
+    const match = (unit === 'btc' ? /^(\d+)(?:[.,](\d{1,8}))?$/ : /^(\d+)$/).exec(value)
+    if (!match) return null
+    const balanceAfter = BigInt(unit === 'btc' ? match[1] + (match[2] ?? '').padEnd(8, '0') : match[1])
+    const balanceBefore = balanceAfter + BigInt(event.quantitySats)
+    return balanceBefore <= 2_100_000_000_000_000n ? balanceBefore : null
+  }
+  return null
+}
+
+function updatePortfolioEstimate() {
+  const fields = operationForm.elements
+  const isDisposal = fields.type.value === 'vente' || fields.type.value === 'paiement'
+  const isSparrow = selection?.bundle?.import.parserName === 'sparrow-transactions-csv'
+  const panel = $('portfolio-estimate')
+  panel.hidden = !isDisposal || !isSparrow
+  if (panel.hidden) return null
+
+  const walletSats = importedWalletBalanceBefore(selection, fields.date.value)
+  const cents = indicativeCents(selection.event)
+  const message = $('portfolio-estimate-message')
+  const controls = $('portfolio-estimate-controls')
+  const apply = $('apply-portfolio-estimate')
+  controls.hidden = walletSats === null || !cents
+  apply.disabled = true
+  apply.textContent = 'Reprendre l’estimation'
+  if (controls.hidden) {
+    message.textContent = 'Estimation indisponible. Il faut une sortie confirmée à la date importée, un solde et une valeur EUR Sparrow.'
+    return null
+  }
+
+  const movedSats = BigInt(selection.event.quantitySats)
+  const estimate = sats => (sats * BigInt(cents) + movedSats / 2n) / movedSats
+  message.textContent = 'Wallet importé avant cession : ' + walletSats.toLocaleString('fr-FR') +
+    ' sats, soit environ ' + money(Number(estimate(walletSats))) + ' au cours journalier Sparrow.'
+  const other = $('other-holdings').value.trim()
+  if (!/^\d{1,16}$/.test(other)) return null
+  const totalSats = walletSats + BigInt(other)
+  if (totalSats > 2_100_000_000_000_000n) return null
+  const total = estimate(totalSats)
+  if (total > 100_000_000_000_000n) return null
+  apply.disabled = false
+  apply.textContent = 'Reprendre ' + money(Number(total))
+  return Number(total)
 }
 
 function importedLabel(entry) {
@@ -250,6 +305,7 @@ function editOperation(entry = null) {
   const values = entry?.operation ?? {}
   const raw = entry?.row?.rawPayload ?? {}
   operationForm.reset()
+  appliedPortfolioEstimate = ''
   const allowed = entry?.row ? Object.keys(labels).filter(type =>
     !entry.date || type === values.type || !['historique', 'post_cloture'].includes(type)
   ) : ['achat', 'vente', 'paiement', 'hors_perimetre']
@@ -349,6 +405,7 @@ function updateOperationFields(selectedPeer) {
       return new Option(parts.join(' · '), item.id)
     }))
   fields.peer.value = selectedPeer ?? ''
+  updatePortfolioEstimate()
 }
 
 $('opening-form').addEventListener('submit', event => {
@@ -413,6 +470,23 @@ $('apply-label-suggestion').addEventListener('click', () => {
   updateOperationFields(operationForm.elements.peer.value)
 })
 operationForm.elements.type.addEventListener('change', () => updateOperationFields(operationForm.elements.peer.value))
+$('other-holdings').addEventListener('input', updatePortfolioEstimate)
+operationForm.elements.date.addEventListener('input', () => {
+  const fields = operationForm.elements
+  if (appliedPortfolioEstimate && fields.portfolio.value === appliedPortfolioEstimate &&
+      Date.parse(fields.date.value + 'Z') !== Date.parse(selection?.event?.occurredAt)) {
+    fields.portfolio.value = ''
+    appliedPortfolioEstimate = ''
+  }
+  updatePortfolioEstimate()
+})
+$('apply-portfolio-estimate').addEventListener('click', () => {
+  const estimate = updatePortfolioEstimate()
+  if (estimate === null) return
+  appliedPortfolioEstimate = (estimate / 100).toFixed(2).replace('.', ',')
+  operationForm.elements.portfolio.value = appliedPortfolioEstimate
+  operationForm.elements.portfolio.focus()
+})
 $('clear-operation').addEventListener('click', () => {
   delete project.operations[selection.id]
   dialog.close()
