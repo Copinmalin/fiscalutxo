@@ -9,7 +9,7 @@ nav{display:flex;gap:1.2rem}
 a{color:var(--accent);text-underline-offset:.2em}
 main,#status{max-width:1060px;margin:auto;padding-inline:1rem}
 #status{min-height:2.15rem;padding-top:.55rem;color:var(--muted);font-size:.9rem}
-#status.error,#operation-error{color:var(--error)}
+#status.error,#operation-error,.import-status.error{color:var(--error)}
 .intro{display:flex;align-items:end;justify-content:space-between;gap:2rem;margin:1.1rem 0 1.6rem}
 .intro>p{max-width:34ch;margin:0 0 .3rem;color:var(--muted)}
 .eyebrow{color:var(--accent);font-weight:700;margin:0 0 .3rem}
@@ -21,9 +21,14 @@ section{padding:1.3rem;margin:0 0 1rem;background:var(--paper);border:1px solid 
 .panels,.input-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.4rem}
 .panels>div+div{border-left:1px solid var(--line);padding-left:1.4rem}
 form label{display:flex;flex-direction:column;gap:.32rem;margin-bottom:.72rem;font-size:.87rem;font-weight:650}
-input,select,button{font:inherit}
-input:not([type=checkbox]),select{min-width:0;width:100%;color:var(--ink);padding:.48rem .58rem;border:1px solid #a8bbb1;border-radius:.35rem;background:#fbfdfb}
+input,select,textarea,button{font:inherit}
+input:not([type=checkbox]),select,textarea{min-width:0;width:100%;color:var(--ink);padding:.48rem .58rem;border:1px solid #a8bbb1;border-radius:.35rem;background:#fbfdfb}
 input[type=file]{font-size:.82rem}
+.paste-import{margin-bottom:.72rem}
+.paste-import summary{color:var(--accent);cursor:pointer}
+.paste-import label{margin-top:.5rem}
+.import-status{color:var(--muted);margin:.65rem 0 0}
+.import-status:empty{margin:0}
 button{border:1px solid var(--accent);border-radius:.35rem;padding:.48rem .78rem;background:var(--accent);color:white;font-weight:650;cursor:pointer}
 button.secondary{background:#fff;color:var(--accent)}
 button:disabled{cursor:default;opacity:.52}

@@ -29,9 +29,9 @@ function button(label, callback) {
   return node
 }
 
-function status(text, error = false) {
-  $('status').textContent = text
-  $('status').classList.toggle('error', error)
+function status(text, error = false, target = 'status') {
+  $(target).textContent = text
+  $(target).classList.toggle('error', error)
 }
 
 async function request(path, data, download = false) {
@@ -45,26 +45,34 @@ async function request(path, data, download = false) {
   return download ? response.blob() : response.json()
 }
 
-async function task(action) {
+async function task(action, errorTarget) {
   if (busy) return
   busy = true
   $('workspace').inert = true
   try {
     await action()
   } catch (error) {
-    status(error.message, true)
+    status(error.message, true, errorTarget)
   } finally {
     $('workspace').inert = false
     busy = false
   }
 }
 
-function changed(text) {
+function changed(text, target) {
   dirty = true
   ready = false
   render()
   $('result').replaceChildren()
-  status(text)
+  status(text, false, target)
+}
+
+async function readImportFile(file) {
+  try {
+    return await file.text()
+  } catch {
+    throw new Error('Impossible de lire le fichier. Enregistrez-le sur cet appareil ou collez son contenu dans le formulaire.')
+  }
 }
 
 function download(blob, filename) {
@@ -245,24 +253,33 @@ $('opening-form').addEventListener('submit', event => {
 
 $('import-form').addEventListener('submit', event => {
   event.preventDefault()
-  const data = new FormData(event.currentTarget)
   const form = event.currentTarget
+  const data = new FormData(form)
+  const file = form.elements.file.files[0]
+  const pasted = data.get('content')
+  const hasPaste = pasted.trim().length > 0
+  status('', false, 'import-status')
   void task(async () => {
-    const file = data.get('file')
+    if (!file && !hasPaste) throw new Error('Choisissez un fichier ou collez son contenu.')
+    const format = data.get('format')
+    const content = hasPaste ? pasted : await readImportFile(file)
+    if (!content.trim()) throw new Error('Le fichier sélectionné est vide.')
     const response = await request('import', {
-      project, format: data.get('format'), source: data.get('source').trim(),
-      name: file.name, content: await file.text(),
+      project, format, source: data.get('source').trim(),
+      name: hasPaste ? (format === 'bundle' ? 'import-collé.json' : 'import-collé.csv') : file.name,
+      content,
     })
     if (response.duplicate) {
-      status('Ce fichier figure déjà dans le dossier.')
+      status('Ce fichier figure déjà dans le dossier.', false, 'import-status')
       return
     }
     project = response.project
     project.complete = false
     project.accountsReviewed = false
     form.reset()
-    changed(response.status === 'imported' ? 'Import ajouté. Vérifiez les opérations.' : 'Import conservé. Vérifiez les anomalies.')
-  })
+    form.querySelector('details').open = false
+    changed(response.status === 'imported' ? 'Import ajouté. Vérifiez les opérations.' : 'Import conservé. Vérifiez les anomalies.', 'import-status')
+  }, 'import-status')
 })
 
 $('template').addEventListener('click', () => download(new Blob([
