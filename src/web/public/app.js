@@ -133,7 +133,7 @@ function suggestedQualification(entry) {
   return null
 }
 
-function render() {
+function render(blockedRows = new Set()) {
   $('fiscal-year').value = project.year
   $('opening-title').textContent = 'Situation au 1er janvier ' + project.year
   $('accounts-year').textContent = 'J’ai vérifié les comptes ouverts, détenus, utilisés ou clos en ' + project.year + '.'
@@ -168,18 +168,38 @@ function render() {
   for (const entry of operations) {
     const tr = element('tr')
     tr.dataset.id = entry.id
-    tr.append(element('td', entry.bundle?.source.name ?? entry.title))
-    tr.append(element('td', importedLabel(entry) || '—'))
-    tr.append(element('td', entry.operation?.date ?? entry.date ?? 'À confirmer'))
+    const source = entry.bundle?.source.name ?? entry.title
+    const label = importedLabel(entry) || (!entry.row ? entry.operation?.reference : '') || '—'
+    const date = entry.operation?.date ?? entry.date
+    const displayDate = date ? date.slice(0, 16).replace('T', ' ') : 'À confirmer'
     const quantity = entry.operation?.sats ?? entry.event?.quantitySats
-    tr.append(element('td', movementSats(quantity, entry.event?.direction)))
-    tr.append(element('td', estimatedEuros(entry.event) ?? '—'))
+    const estimate = estimatedEuros(entry.event) ?? '—'
+    for (const [column, value, fullValue] of [
+      ['source', source], ['label', label], ['date', displayDate, date],
+      ['sats', movementSats(quantity, entry.event?.direction)], ['eur', estimate],
+    ]) {
+      const cell = element('td', value, 'col-' + column)
+      cell.title = fullValue ?? value
+      tr.append(cell)
+    }
+
+    const needsCorrection = entry.operation && blockedRows.has(entry.id)
     const proposal = entry.operation ? null : suggestedQualification(entry)
-    tr.append(element('td', entry.operation ? labels[entry.operation.type] :
-      proposal ? 'Suggestion : ' + labels[proposal] : 'À revoir'))
-    const action = element('td')
-    action.append(button(entry.operation ? 'Modifier' : 'Qualifier', () => editOperation(entry)))
-    tr.append(action)
+    const state = needsCorrection ? 'À corriger' : entry.operation ? labels[entry.operation.type] : 'À qualifier'
+    tr.className = entry.operation && !needsCorrection ? 'operation-qualified' : 'operation-pending'
+    const control = button(state, () => editOperation(entry))
+    control.className = 'operation-status'
+    control.title = proposal ? 'Suggestion : ' + labels[proposal] : state
+    control.setAttribute('aria-label', (entry.operation ? 'Modifier la qualification' : 'Qualifier l’opération') +
+      ' · ' + (label === '—' ? source : label) + ' · ' + control.title)
+    const qualification = element('td', undefined, 'col-status')
+    qualification.append(control)
+    tr.append(qualification)
+    tr.addEventListener('click', event => {
+      if (control.contains(event.target)) return
+      control.focus({ preventScroll: true })
+      editOperation(entry)
+    })
     operationsTable.append(tr)
   }
   $('operation-list').replaceChildren(operationsTable)
@@ -257,6 +277,8 @@ function editOperation(entry = null) {
   fields.reference.value = values.reference ??
     (raw.justificatif || importedLabel(entry)).slice(0, fields.reference.maxLength)
   fields.valuationReference.value = values.valuationReference ?? raw.valorisation ?? ''
+  $('row-source').hidden = !entry?.row
+  $('row-source').textContent = entry?.bundle?.source.name ?? ''
   $('row-summary').hidden = !entry?.row
   if (entry?.row) {
     $('row-line').textContent = entry.row.rowNumber
@@ -458,7 +480,7 @@ $('calculate').addEventListener('click', () => void task(async () => {
   project = checked.project
   const result = checked.result
   ready = result.ready
-  render()
+  render(new Set(result.blockers.map(blocker => blocker.id)))
   const panel = $('result')
   panel.replaceChildren(element('h3', ready ? 'Dossier contrôlé' : 'Dossier à compléter'))
   panel.classList.toggle('pending', !ready)

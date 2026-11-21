@@ -68,13 +68,18 @@
       <p id="operations-empty">Aucune opération à qualifier dans le dossier.</p>
       <div class="table-scroll" id="table-scroll" role="region" aria-label="Tableau des opérations" tabindex="0" hidden>
         <table>
-          <thead><tr><th scope="col">Source</th><th scope="col">Label</th><th scope="col">Date UTC</th><th scope="col">Variation en sats</th><th scope="col">Estimation EUR</th><th scope="col">Qualification</th><th scope="col">Action</th></tr></thead>
+          <thead>
+            <tr><th scope="col" class="col-source">Source</th><th scope="col" class="col-label">Label</th>
+              <th scope="col" class="col-date">Date UTC</th><th scope="col" class="col-sats">Sats</th>
+              <th scope="col" class="col-eur">Estim. EUR</th><th scope="col" class="col-status">Qualification</th></tr>
+          </thead>
           <tbody id="operation-list"></tbody>
         </table>
       </div>
       <dialog id="operation-dialog" aria-labelledby="operation-title">
         <form id="operation-form">
           <div class="heading-row"><h3 id="operation-title">Qualifier l’opération</h3><button type="button" class="secondary" id="cancel-operation">Annuler</button></div>
+          <p id="row-source" hidden></p>
           <dl id="row-summary" class="operation-summary" aria-label="Données importées" hidden>
             <div><dt>Ligne</dt><dd id="row-line"></dd></div>
             <div><dt>Label</dt><dd id="row-label"></dd></div>
