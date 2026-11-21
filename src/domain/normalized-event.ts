@@ -57,7 +57,7 @@ export type NormalizedEvent = {
 
   sourceRef: SourceRef
 
-  occurredAt: string
+  occurredAt: string | null
   timezone?: string
 
   asset: BitcoinAsset
@@ -128,7 +128,7 @@ export function validateNormalizedEvent(event: NormalizedEvent): NormalizedEvent
     errors.push('sourceRef.parserVersion is required')
   }
 
-  if (!isValidIsoDate(event.occurredAt)) {
+  if (event.occurredAt === null ? event.taxableStatus !== 'needs_review' : !isValidIsoDate(event.occurredAt)) {
     errors.push('occurredAt must be a valid ISO 8601 date')
   }
 
@@ -136,7 +136,7 @@ export function validateNormalizedEvent(event: NormalizedEvent): NormalizedEvent
     errors.push('asset must be BTC')
   }
 
-  if (!Number.isInteger(event.quantitySats) || event.quantitySats < 0) {
+  if (!Number.isSafeInteger(event.quantitySats) || event.quantitySats < 0) {
     errors.push('quantitySats must be a non-negative integer')
   }
 
@@ -187,7 +187,7 @@ function validateBitcoinFee(fee: BitcoinFee, errors: string[]): void {
     errors.push('fee.asset must be BTC')
   }
 
-  if (!Number.isInteger(fee.amountSats) || fee.amountSats < 0) {
+  if (!Number.isSafeInteger(fee.amountSats) || fee.amountSats < 0) {
     errors.push('fee.amountSats must be a non-negative integer')
   }
 }
@@ -197,7 +197,7 @@ function validateOptionalCents(fieldName: string, value: number | undefined, err
     return
   }
 
-  if (!Number.isInteger(value)) {
+  if (!Number.isSafeInteger(value)) {
     errors.push(`${fieldName} must be an integer number of cents`)
   }
 }

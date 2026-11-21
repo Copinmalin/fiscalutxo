@@ -1,5 +1,7 @@
 # NormalizedEvent V0
 
+Une date non confirmée ou invalide est représentée par `occurredAt: null` uniquement sur un événement à revoir. Le dossier fiscal exige une date confirmée avant de calculer.
+
 ## 1. Objectif
 
 `NormalizedEvent` est le format canonique minimal utilisé par FiscalUTXO pour représenter une opération Bitcoin normalisée après import.
@@ -142,7 +144,7 @@ export type NormalizedEvent = {
 
   sourceRef: SourceRef
 
-  occurredAt: string
+  occurredAt: string | null
   timezone?: string
 
   asset: BitcoinAsset

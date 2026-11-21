@@ -12,7 +12,7 @@ import {
 } from '../index.js'
 
 type CliOptions = {
-  command: 'sparrow' | 'help'
+  command: 'sparrow' | 'help' | 'invalid'
   inputPath?: string
   outPath?: string
   sourceId?: string
@@ -35,6 +35,10 @@ export async function runCli(argv: string[]): Promise<CliResult> {
       stdout: `${usage()}\n`,
       stderr: '',
     }
+  }
+
+  if (parsed.command === 'invalid') {
+    return { exitCode: 1, stdout: '', stderr: 'Unknown command or invalid arguments. Use --help.\n' }
   }
 
   if (!parsed.inputPath) {
@@ -60,20 +64,24 @@ export async function runCli(argv: string[]): Promise<CliResult> {
       parseResult,
     })
     const json = stringifyImportBundle(bundle)
+    const exitCode = bundle.import.importStatus === 'failed' ? 2 : bundle.import.importStatus === 'partial' ? 3 : 0
+    const diagnostics = [...bundle.errors, ...bundle.rawRows.filter(row => row.parseErrors.length)
+      .map(row => 'Row ' + row.rowNumber + ': ' + row.parseErrors.join(', '))]
+    const stderr = diagnostics.length ? diagnostics.join('\n') + '\n' : ''
 
     if (parsed.outPath) {
-      await writeFile(parsed.outPath, json, 'utf8')
+      await writeFile(parsed.outPath, json, { encoding: 'utf8', mode: 0o600, flag: 'wx' })
       return {
-        exitCode: parseResult.errors.length > 0 ? 2 : 0,
+        exitCode,
         stdout: '',
-        stderr: parseResult.errors.length > 0 ? `${parseResult.errors.join('\n')}\n` : '',
+        stderr,
       }
     }
 
     return {
-      exitCode: parseResult.errors.length > 0 ? 2 : 0,
+      exitCode,
       stdout: json,
-      stderr: parseResult.errors.length > 0 ? `${parseResult.errors.join('\n')}\n` : '',
+      stderr,
     }
   } catch (error) {
     return {
@@ -92,7 +100,7 @@ function parseArgs(argv: string[]): CliOptions {
   }
 
   if (command !== 'sparrow') {
-    return { command: 'help' }
+    return { command: 'invalid' }
   }
 
   const options: CliOptions = { command: 'sparrow' }
@@ -131,7 +139,10 @@ function parseArgs(argv: string[]): CliOptions {
 
     if (!arg.startsWith('-') && !options.inputPath) {
       options.inputPath = arg
+      continue
     }
+
+    return { command: 'invalid' }
   }
 
   return options

@@ -1,5 +1,7 @@
 # Import CSV Sparrow V0
 
+Ce document décrit le contrat historique. Le parseur v1 accepte aussi les colonnes `Value (BTC)`, `Balance (BTC)` et `Fee (BTC)`, ou les trois colonnes en sats. L’unité doit être cohérente. Les transactions sans date confirmée ont `occurredAt: null`. Voir [CLI.md](../CLI.md) pour les diagnostics et [l’exporteur Sparrow 2.5.6](https://github.com/sparrowwallet/sparrow/blob/2.5.6/src/main/java/com/sparrowwallet/sparrow/io/WalletTransactions.java#L79) pour le format publié.
+
 ## 1. Objectif
 
 Définir l’import CSV Sparrow V0 pour FiscalUTXO.

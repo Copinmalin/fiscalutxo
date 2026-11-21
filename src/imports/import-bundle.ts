@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import type { NormalizedEvent } from '../domain/normalized-event.js'
 import type { ParsedRawRow, SparrowParseResult } from '../importers/sparrow-transactions-csv.js'
 
@@ -33,6 +34,7 @@ export type LocalRawRowRecord = {
   rowFingerprint: string
   parseStatus: ParsedRawRow['parseStatus']
   parseErrors: string[]
+  fields?: string[]
 }
 
 export type LocalImportBundle = {
@@ -43,6 +45,7 @@ export type LocalImportBundle = {
   rawRows: LocalRawRowRecord[]
   normalizedEvents: NormalizedEvent[]
   errors: string[]
+  sourceText?: string
 }
 
 export type CreateSparrowImportBundleInput = {
@@ -51,7 +54,13 @@ export type CreateSparrowImportBundleInput = {
   fileName: string
   fileFingerprint: string
   importedAt: string
-  parseResult: SparrowParseResult
+  parseResult: Pick<SparrowParseResult, 'events' | 'errors'> & {
+    parserName: string
+    parserVersion: string
+    rows: (Omit<ParsedRawRow, 'fields'> & { fields?: string[] })[]
+  }
+  source?: LocalSourceRecord
+  sourceText?: string
 }
 
 export function createSparrowImportBundle(input: CreateSparrowImportBundleInput): LocalImportBundle {
@@ -62,7 +71,7 @@ export function createSparrowImportBundle(input: CreateSparrowImportBundleInput)
   return {
     schemaVersion: 'local-import-bundle.v0',
     generatedAt: input.importedAt,
-    source: {
+    source: input.source ?? {
       id: input.sourceId,
       name: 'Sparrow Wallet',
       sourceType: 'wallet',
@@ -85,6 +94,7 @@ export function createSparrowImportBundle(input: CreateSparrowImportBundleInput)
     rawRows,
     normalizedEvents: [...input.parseResult.events].sort((left, right) => left.id.localeCompare(right.id)),
     errors: [...input.parseResult.errors],
+    ...(input.sourceText === undefined ? {} : { sourceText: input.sourceText }),
   }
 }
 
@@ -92,7 +102,7 @@ export function stringifyImportBundle(bundle: LocalImportBundle): string {
   return `${JSON.stringify(sortJsonValue(bundle), null, 2)}\n`
 }
 
-function toLocalRawRow(importId: string, row: ParsedRawRow): LocalRawRowRecord {
+function toLocalRawRow(importId: string, row: CreateSparrowImportBundleInput['parseResult']['rows'][number]): LocalRawRowRecord {
   const rawPayload = sortStringRecord(row.rawPayload)
 
   return {
@@ -103,6 +113,7 @@ function toLocalRawRow(importId: string, row: ParsedRawRow): LocalRawRowRecord {
     rowFingerprint: buildRowFingerprint(row.rowNumber, rawPayload),
     parseStatus: row.parseStatus,
     parseErrors: [...row.parseErrors],
+    ...(row.fields ? { fields: row.fields } : {}),
   }
 }
 
@@ -119,12 +130,9 @@ function getImportStatus(errors: string[], rawRows: LocalRawRowRecord[]): LocalI
 }
 
 function sortStringRecord(record: Record<string, string>): Record<string, string> {
-  return Object.keys(record)
+  return Object.fromEntries(Object.keys(record)
     .sort((left, right) => left.localeCompare(right))
-    .reduce<Record<string, string>>((sorted, key) => {
-      sorted[key] = record[key] ?? ''
-      return sorted
-    }, {})
+    .map((key) => [key, record[key] ?? '']))
 }
 
 function sortJsonValue(value: unknown): unknown {
@@ -133,19 +141,14 @@ function sortJsonValue(value: unknown): unknown {
   }
 
   if (value && typeof value === 'object') {
-    return Object.keys(value as Record<string, unknown>)
-      .sort((left, right) => left.localeCompare(right))
-      .reduce<Record<string, unknown>>((sorted, key) => {
-        sorted[key] = sortJsonValue((value as Record<string, unknown>)[key])
-        return sorted
-      }, {})
+    return Object.fromEntries(Object.entries(value)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, child]) => [key, sortJsonValue(child)]))
   }
 
   return value
 }
 
 function buildRowFingerprint(rowNumber: number, rawPayload: Record<string, string>): string {
-  const keys = Object.keys(rawPayload).join('|')
-  const valuesLength = Object.values(rawPayload).join('|').length
-  return `row:${rowNumber}:keys:${keys.length}:values:${valuesLength}`
+  return 'sha256:' + createHash('sha256').update(JSON.stringify([rowNumber, rawPayload])).digest('hex')
 }
