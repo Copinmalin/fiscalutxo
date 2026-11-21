@@ -1,21 +1,21 @@
-# Fiscalité France — notes de travail
+# Fiscalité France — cessions Bitcoin 2026
 
-Statut : à documenter.
+Règles vérifiées le 21 novembre 2026. Le dossier cible les opérations réalisées en 2026 dans le patrimoine privé d’un foyer résident fiscal français. La frontière de l’année est minuit à Paris. Les dates d’import et d’export restent affichées en UTC. Le formulaire 2086 millésime 2026 concerne les revenus 2025 et sert de référence de structure. Les sorties préparatoires seront à confronter au formulaire de la campagne 2027 dès sa publication.
 
-## Objet
+## Opérations et périmètre
 
-Documenter les règles fiscales françaises utiles au MVP.
+La vente de BTC contre des euros et le paiement d’un bien ou d’un service sont des cessions à titre onéreux. Un transfert personnel entre deux comptes du même foyer est saisi avec ses deux lignes. Les frais de ce transfert sont examinés séparément. Quand des BTC rémunèrent un service, leur paiement entre dans le calcul comme cession. Les frais directement attachés à une cession peuvent être regroupés avec celle-ci dans le cadre de la simplification administrative. Les échanges entre crypto-actifs sans soulte bénéficient d’un sursis. [CGI, art. 150 VH bis](https://www.legifrance.gouv.fr/codes/section_lc/LEGITEXT000006069577/LEGISCTA000006191580/2026-11-02) · [BOFiP, champ d’application](https://bofip.impots.gouv.fr/bofip/11967-PGP.html)
 
-## Points à couvrir
+Le MVP traite les acquisitions à titre onéreux, ventes, paiements et transferts Bitcoin documentés. Une soulte, une donation, une activité professionnelle, un historique incomplet ou un autre crypto-actif qui affecte le portefeuille fiscal doivent être traités avant de déclarer. Le périmètre déclaré doit couvrir le foyer et toutes ses sources.
 
-- Formulaire 2086.
-- Report 2042 C : 3AN / 3BN / 3CN.
-- Checklist 3916-bis.
-- Seuil annuel de 305 €.
-- Formule de calcul 150 VH bis.
-- Distinction transfert personnel / cession imposable.
-- Cas hors périmètre : usage professionnel, minage, trading professionnel.
+## Calcul et report
 
-## Principe produit
+Pour chaque cession validée, noter **B** le prix total d’acquisition restant, **P** le prix de cession avant frais, **F** les frais justifiés et **V** la valeur du portefeuille global juste avant la cession. La fraction consommée est **B × P ÷ V**. La plus ou moins-value est **P − F − (B × P ÷ V)**. Reporter la fraction consommée dans le capital cumulé pour la cession suivante. Utiliser les acquisitions cumulées et les fractions déjà consommées au 1er janvier si l’historique précède 2026. Le dossier conserve les valeurs et références de justificatifs saisies. Le calcul garde des décimales intermédiaires avant l’affichage au centime. [BOFiP, base d’imposition](https://bofip.impots.gouv.fr/bofip/11968-PGP.html) · [Notice 2086](https://www.impots.gouv.fr/sites/default/files/formulaires/2086/2026/2086_5515.pdf)
 
-En cas d’incertitude, l’application doit marquer l’opération `needs_review` et ne jamais prétendre certifier la déclaration.
+L’exonération s’applique lorsque le total annuel des prix de cession du foyer, au sens du III-A, n’excède pas **305 €** après exclusion des échanges en sursis. Les prix restent à renseigner dans l’annexe. Au-delà du seuil, agréger les gains et pertes de même nature de l’année. Le report est **3AN** pour un gain global ou **3BN** pour une perte globale. La perte ne se reporte pas sur l’année suivante. La DGFiP indique un taux forfaitaire de **31,4 %**, dont 12,8 % d’impôt sur le revenu et 18,6 % de prélèvements sociaux. **3CN** relève du choix du contribuable s’il opte pour le barème progressif. Le MVP restitue le choix à faire sans calculer l’impôt du foyer. [CGI, art. 150 VH bis](https://www.legifrance.gouv.fr/codes/section_lc/LEGITEXT000006069577/LEGISCTA000006191580/2026-11-02) · [DGFiP, déclarer les cessions](https://www.impots.gouv.fr/particulier/questions/comment-declarer-les-plus-ou-moins-values-sur-cessions-dactifs-numeriques)
+
+Exemple testé d’après la notice. Avec 1 000 € d’acquisitions, une cession de 450 € sur un portefeuille de 1 200 € consomme 375 € de capital et dégage 75 €. Une cession de tout le portefeuille restant pour 1 300 € consomme ensuite les 625 € restants et dégage 675 €. [Notice 2086](https://www.impots.gouv.fr/sites/default/files/formulaires/2086/2026/2086_5515.pdf)
+
+## Comptes étrangers
+
+La checklist 3916-bis recense les comptes concernés ouverts, détenus, utilisés ou clos auprès d’un organisme établi à l’étranger. Vérifier le pays de l’entité qui fournit effectivement le compte. Un wallet en autoconservation ne déclenche pas cette déclaration à lui seul. [CGI, art. 1649 bis C](https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000054339286/2026-07-09) · [DGFiP, formulaire 3916-3916 bis](https://www.impots.gouv.fr/sites/default/files/formulaires/3916/2026/3916_5454.pdf)
