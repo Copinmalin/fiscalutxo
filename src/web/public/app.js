@@ -26,6 +26,7 @@ let priceDrafts = {}
 let priceKind = null
 let importedAcquisitionPrice = ''
 let appliedPortfolioEstimate = ''
+let appliedDisposalEstimate = ''
 let ready = false
 
 function element(tag, text, className) {
@@ -115,11 +116,35 @@ function estimatedEuros(event) {
   return money(event.direction === 'out' && cents > 0 ? -cents : cents)
 }
 
-function importedWalletBalanceBefore(entry, date) {
+function importedDisposalRate(entry, date) {
   const event = entry?.event
-  const sourceDate = event?.occurredAt
-  if (!sourceDate || Date.parse(date + 'Z') !== Date.parse(sourceDate) || event.direction !== 'out' || !event.quantitySats) return null
+  const cents = indicativeCents(event)
+  if (entry?.bundle?.import.parserName !== 'sparrow-transactions-csv' ||
+      event?.direction !== 'out' || !event.quantitySats || !cents ||
+      !event.occurredAt || Date.parse(date + 'Z') !== Date.parse(event.occurredAt)) return null
+  const movedSats = BigInt(event.quantitySats)
+  return sats => (sats * BigInt(cents) + movedSats / 2n) / movedSats
+}
 
+function updateDisposalEstimate() {
+  const fields = operationForm.elements
+  const rate = grossKind(fields.type.value) === 'cession' && importedDisposalRate(selection, fields.date.value)
+  const sats = fields.sats.value
+  const amount = rate && /^\d{1,16}$/.test(sats) && BigInt(sats) <= 2_100_000_000_000_000n
+    ? rate(BigInt(sats)) : 0n
+  const estimate = amount > 0n && amount <= 100_000_000_000_000n
+    ? (Number(amount) / 100).toFixed(2).replace('.', ',') : ''
+  const button = $('apply-disposal-estimate')
+  $('disposal-estimate').hidden = !estimate
+  if (estimate) button.textContent = 'Reprendre ' + money(Number(amount))
+  if (grossKind(fields.type.value) === 'cession' && appliedDisposalEstimate && appliedDisposalEstimate !== estimate) {
+    if (fields.gross.value === appliedDisposalEstimate) fields.gross.value = ''
+    appliedDisposalEstimate = ''
+  }
+  return estimate
+}
+
+function importedWalletBalanceBefore(entry) {
   for (const [header, raw] of Object.entries(entry.row.rawPayload)) {
     const unit = /^Balance \((BTC|sats?)\)$/i.exec(header)?.[1].toLowerCase()
     if (!unit) continue
@@ -127,7 +152,7 @@ function importedWalletBalanceBefore(entry, date) {
     const match = (unit === 'btc' ? /^(\d+)(?:[.,](\d{1,8}))?$/ : /^(\d+)$/).exec(value)
     if (!match) return null
     const balanceAfter = BigInt(unit === 'btc' ? match[1] + (match[2] ?? '').padEnd(8, '0') : match[1])
-    const balanceBefore = balanceAfter + BigInt(event.quantitySats)
+    const balanceBefore = balanceAfter + BigInt(entry.event.quantitySats)
     return balanceBefore <= 2_100_000_000_000_000n ? balanceBefore : null
   }
   return null
@@ -141,12 +166,12 @@ function updatePortfolioEstimate() {
   panel.hidden = !isDisposal || !isSparrow
   if (panel.hidden) return null
 
-  const walletSats = importedWalletBalanceBefore(selection, fields.date.value)
-  const cents = indicativeCents(selection.event)
+  const estimate = importedDisposalRate(selection, fields.date.value)
+  const walletSats = estimate ? importedWalletBalanceBefore(selection) : null
   const message = $('portfolio-estimate-message')
   const controls = $('portfolio-estimate-controls')
   const apply = $('apply-portfolio-estimate')
-  controls.hidden = walletSats === null || !cents
+  controls.hidden = walletSats === null
   apply.disabled = true
   apply.textContent = 'Reprendre l’estimation'
   if (controls.hidden) {
@@ -154,8 +179,6 @@ function updatePortfolioEstimate() {
     return null
   }
 
-  const movedSats = BigInt(selection.event.quantitySats)
-  const estimate = sats => (sats * BigInt(cents) + movedSats / 2n) / movedSats
   message.textContent = 'Wallet importé avant cession : ' + walletSats.toLocaleString('fr-FR') +
     ' sats, soit environ ' + money(Number(estimate(walletSats))) + ' au cours journalier Sparrow.'
   const other = $('other-holdings').value.trim()
@@ -306,6 +329,7 @@ function editOperation(entry = null) {
   const raw = entry?.row?.rawPayload ?? {}
   operationForm.reset()
   appliedPortfolioEstimate = ''
+  appliedDisposalEstimate = ''
   const allowed = entry?.row ? Object.keys(labels).filter(type =>
     !entry.date || type === values.type || !['historique', 'post_cloture'].includes(type)
   ) : ['achat', 'vente', 'paiement', 'hors_perimetre']
@@ -381,7 +405,7 @@ function updateOperationFields(selectedPeer) {
     peer: ['doublon', 'transfert', 'paiement'].includes(type),
   }
   for (const [field, show] of Object.entries(visible)) {
-    fields[field].closest('label').hidden = !show
+    fields[field].closest(field === 'gross' ? '#gross-field' : 'label').hidden = !show
     fields[field].disabled = !show
     fields[field].required = show && (field !== 'peer' || type !== 'paiement')
   }
@@ -405,6 +429,7 @@ function updateOperationFields(selectedPeer) {
       return new Option(parts.join(' · '), item.id)
     }))
   fields.peer.value = selectedPeer ?? ''
+  updateDisposalEstimate()
   updatePortfolioEstimate()
 }
 
@@ -471,6 +496,14 @@ $('apply-label-suggestion').addEventListener('click', () => {
 })
 operationForm.elements.type.addEventListener('change', () => updateOperationFields(operationForm.elements.peer.value))
 $('other-holdings').addEventListener('input', updatePortfolioEstimate)
+operationForm.elements.sats.addEventListener('input', updateDisposalEstimate)
+$('apply-disposal-estimate').addEventListener('click', () => {
+  const estimate = updateDisposalEstimate()
+  if (!estimate) return
+  appliedDisposalEstimate = estimate
+  operationForm.elements.gross.value = estimate
+  operationForm.elements.gross.focus()
+})
 operationForm.elements.date.addEventListener('input', () => {
   const fields = operationForm.elements
   if (appliedPortfolioEstimate && fields.portfolio.value === appliedPortfolioEstimate &&
@@ -478,6 +511,7 @@ operationForm.elements.date.addEventListener('input', () => {
     fields.portfolio.value = ''
     appliedPortfolioEstimate = ''
   }
+  updateDisposalEstimate()
   updatePortfolioEstimate()
 })
 $('apply-portfolio-estimate').addEventListener('click', () => {
