@@ -2,7 +2,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'node:ht
 import { readFile } from 'node:fs/promises'
 import { z } from 'zod'
 import { calculate } from '../mvp/tax.js'
-import { exportReport } from '../mvp/export.js'
+import { generateReport, reportFormats, reportMimeTypes } from '../mvp/export.js'
 import { demoProject, emptyProject, importInputSchema, ingest, projectSchema } from '../mvp/project.js'
 
 const assets = {
@@ -12,11 +12,6 @@ const assets = {
   '/style.css': ['style.css', 'text/css; charset=utf-8'],
 } as const
 
-const mimes = {
-  json: 'application/json; charset=utf-8',
-  csv: 'text/csv; charset=utf-8',
-  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-} as const
 
 const limit = 24 * 1024 * 1024
 
@@ -54,13 +49,15 @@ export function createLocalServer() {
         return json(response, 200, { project, result: calculate(project) })
       }
       const { project, format } = z.object({
-        project: projectSchema, format: z.enum(['json', 'csv', 'xlsx']),
+        project: projectSchema, format: z.enum(reportFormats),
       }).parse(input)
       const result = calculate(project)
       if (!result.ready) return json(response, 409, { error: 'Complétez le dossier avant l’export fiscal.' })
+      const report = await generateReport(result, format)
+      const filename = format === 'pdf' ? 'fiscalutxo-aide-2086-2026.pdf' : 'fiscalutxo-2026.' + format
       response.writeHead(200, {
-        'Content-Type': mimes[format], 'Content-Disposition': 'attachment; filename="fiscalutxo-2026.' + format + '"',
-      }).end(exportReport(result, format))
+        'Content-Type': reportMimeTypes[format], 'Content-Disposition': 'attachment; filename="' + filename + '"',
+      }).end(report)
     } catch (error) {
       if (error instanceof RangeError) return json(response, 413, { error: 'Dossier ou import supérieur à 24 Mio' })
       if (error instanceof z.ZodError) {

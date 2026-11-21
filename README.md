@@ -6,7 +6,7 @@ FiscalUTXO est une application web locale qui aide un foyer fiscal français à 
 
 1. Ouvrir [la démo FiscalUTXO](https://copinmalin.github.io/fiscalutxo/) sur ordinateur ou mobile.
 2. Cliquer sur **Essayer avec un exemple**, puis sur **Contrôler le dossier** dans la section **Résultats**. Le dossier fictif affiche une plus-value de 750 €.
-3. Essayer les exports CSV, JSON ou XLSX. Pour reprendre ensuite un dossier, utiliser **Enregistrer le dossier**, puis **Ouvrir** pour recharger le fichier JSON produit.
+3. Essayer les exports CSV, JSON, XLSX ou **PDF 2086**. Pour reprendre ensuite un dossier, utiliser **Enregistrer le dossier**, puis **Ouvrir** pour recharger le fichier JSON produit.
 
 La démo fonctionne sans installation ni compte. Les fichiers et les calculs restent dans le navigateur. Si le sélecteur de fichiers bloque sur mobile, utiliser **Coller le contenu à la place** dans le formulaire d’import.
 
@@ -27,7 +27,7 @@ Ouvrir dans le navigateur l’adresse `http://127.0.0.1:…` affichée dans le t
 3. Renseigner les comptes concernés, confirmer la couverture du dossier et lancer le contrôle. Corriger les écarts affichés avant d’exporter le détail 2086, le résumé 2042 C et la checklist 3916-bis.
 4. Cliquer sur **Enregistrer le dossier** pour télécharger le JSON rechargeable. Le conserver dans un dossier privé hors du dépôt. Le bouton **Ouvrir** restaure les imports et les qualifications.
 
-La préparation cible les revenus 2026. Les exports restent des supports de travail jusqu’à vérification des formulaires officiels de la campagne 2027. L’application calcule la plus ou moins-value patrimoniale. Elle laisse le choix du barème au déclarant.
+Le PDF 2086 est une aide à la saisie basée sur les numéros de lignes du millésime 2026. La préparation cible les revenus 2026. Les exports restent des supports de travail jusqu’à vérification des formulaires officiels de la campagne 2027. L’application calcule la plus ou moins-value patrimoniale. Elle laisse le choix du barème au déclarant.
 
 ## Structure du dépôt
 
