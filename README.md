@@ -4,7 +4,9 @@ FiscalUTXO est une application web locale qui aide un foyer fiscal français à 
 
 ## Essai dans le navigateur
 
-L’édition statique se construit avec `npm run build:pages`. Elle réutilise le moteur local dans le navigateur. Le bouton **Essayer avec un exemple** charge un dossier fictif et permet de vérifier les résultats et les exports. Les dossiers personnels restent sur l’appareil et peuvent être sauvegardés en JSON.
+Ouvrir [la démo FiscalUTXO](https://copinmalin.github.io/fiscalutxo/) et choisir **Essayer avec un exemple** pour tester les résultats et les exports avec un dossier fictif. Le calcul et le traitement des fichiers se font dans le navigateur. Les dossiers peuvent être sauvegardés en JSON.
+
+`npm run build:pages` génère l’édition statique.
 
 ## Démarrer en local
 

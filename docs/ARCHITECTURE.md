@@ -18,3 +18,5 @@ La CLI reste disponible pour l’import Sparrow indépendant. Le schéma [SQLite
 ## Édition statique
 
 `npm run build:pages` génère `dist/pages/` pour GitHub Pages. Le build assemble le moteur TypeScript et la même interface. Le transport navigateur traite le dossier, les imports et les exports en mémoire. La politique de sécurité de la page bloque les connexions applicatives sortantes. La version avec Node.js conserve son serveur de boucle locale et ses routes.
+
+GitHub Pages sert la racine de `gh-pages`. Cette branche porte uniquement les fichiers du build et les notices de licence des dépendances. Pour mettre à jour la démo, générer les fichiers depuis une révision relue et vérifier la page publiée après le déploiement.
