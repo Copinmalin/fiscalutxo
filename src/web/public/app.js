@@ -268,7 +268,13 @@ function updateOperationFields(selectedPeer) {
   const linked = item => txid && item.event?.txid?.toLowerCase() === txid.toLowerCase()
   candidates.sort((a, b) => Number(Boolean(linked(b))) - Number(Boolean(linked(a))))
   fields.peer.replaceChildren(new Option('Choisir une ligne', ''),
-    ...candidates.map(item => new Option(item.title + (linked(item) ? ' · même txid' : ''), item.id)))
+    ...candidates.map(item => {
+      const quantity = item.event?.quantitySats
+      const sats = quantity === undefined ? 'Sats indisponibles' : movementSats(quantity, item.event.direction) + ' sats'
+      const parts = [importedLabel(item) || 'Sans label', sats, item.title]
+      if (linked(item)) parts.push('même txid')
+      return new Option(parts.join(' · '), item.id)
+    }))
   fields.peer.value = selectedPeer ?? ''
 }
 
