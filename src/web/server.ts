@@ -3,13 +3,14 @@ import { readFile } from 'node:fs/promises'
 import { z } from 'zod'
 import { calculate } from '../mvp/tax.js'
 import { generateReport, reportFormats, reportMimeTypes } from '../mvp/export.js'
-import { demoProject, emptyProject, importInputSchema, ingest, projectSchema } from '../mvp/project.js'
+import { demoProject, emptyProject, fiscalYearSchema, importInputSchema, ingest, projectSchema } from '../mvp/project.js'
 
 const assets = {
-  '/': ['index.html', 'text/html; charset=utf-8'],
-  '/app.js': ['app.js', 'text/javascript; charset=utf-8'],
-  '/transport.js': ['transport.js', 'text/javascript; charset=utf-8'],
-  '/style.css': ['style.css', 'text/css; charset=utf-8'],
+  '/': ['./public/index.html', 'text/html; charset=utf-8'],
+  '/app.js': ['./public/app.js', 'text/javascript; charset=utf-8'],
+  '/period.js': ['../mvp/period.js', 'text/javascript; charset=utf-8'],
+  '/transport.js': ['./public/transport.js', 'text/javascript; charset=utf-8'],
+  '/style.css': ['./public/style.css', 'text/css; charset=utf-8'],
 } as const
 
 
@@ -25,15 +26,20 @@ export function createLocalServer() {
     if (request.method === 'GET' && Object.hasOwn(assets, path)) {
       const [file, mime] = assets[path as keyof typeof assets]
       try {
-        const content = await readFile(new URL('./public/' + file, import.meta.url))
+        const content = await readFile(new URL(file, import.meta.url))
         response.writeHead(200, { 'Content-Type': mime }).end(content)
       } catch {
         json(response, 500, { error: 'Ressource locale indisponible' })
       }
       return
     }
-    if (request.method === 'GET' && path === '/api/new') return json(response, 200, emptyProject())
-    if (request.method === 'GET' && path === '/api/demo') return json(response, 200, demoProject())
+    const [route, query] = path.split('?')
+    if (request.method === 'GET' && (route === '/api/new' || route === '/api/demo')) {
+      const year = new URLSearchParams(query).get('year')
+      const parsed = fiscalYearSchema.optional().safeParse(year === null ? undefined : Number(year))
+      if (!parsed.success) return json(response, 422, { error: 'Année des opérations invalide' })
+      return json(response, 200, route === '/api/new' ? emptyProject(parsed.data) : demoProject(parsed.data))
+    }
     if (request.method !== 'POST' || !['/api/import', '/api/check', '/api/export'].includes(path)) {
       return json(response, 404, { error: 'Route inconnue' })
     }
@@ -54,7 +60,7 @@ export function createLocalServer() {
       const result = calculate(project)
       if (!result.ready) return json(response, 409, { error: 'Complétez le dossier avant l’export fiscal.' })
       const report = await generateReport(result, format)
-      const filename = format === 'pdf' ? 'fiscalutxo-aide-2086-2026.pdf' : 'fiscalutxo-2026.' + format
+      const filename = format === 'pdf' ? 'fiscalutxo-aide-2086-' + (result.year + 1) + '.pdf' : 'fiscalutxo-' + result.year + '.' + format
       response.writeHead(200, {
         'Content-Type': reportMimeTypes[format], 'Content-Disposition': 'attachment; filename="' + filename + '"',
       }).end(report)

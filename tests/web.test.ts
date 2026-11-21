@@ -8,8 +8,9 @@ import { createLocalServer } from '../src/web/server.js'
 it('calcule et exporte l’exemple statique sans serveur', async () => {
   const project = await browserRequest('demo')
   expect(await browserRequest('check', project)).toMatchObject({
-    result: { ready: true, report: { '3AN': 75_000 } },
+    result: { year: 2025, ready: true, report: { '3AN': 75_000 } },
   })
+  expect(await browserRequest('demo', 2026)).toEqual(demoProject(2026))
   const report = await browserRequest('export', { project, format: 'xlsx' })
   expect(report).toBeInstanceOf(Blob)
   if (report instanceof Blob) {
@@ -41,6 +42,9 @@ describe('serveur local', () => {
     expect(page.status).toBe(200)
     expect(page.headers.get('cache-control')).toBe('no-store')
     expect(await page.text()).toContain('Dossier Bitcoin')
+    expect(await (await fetch(base + '/api/new')).json()).toMatchObject({ year: 2025 })
+    expect(await (await fetch(base + '/api/demo?year=2026')).json()).toEqual(demoProject(2026))
+    expect((await fetch(base + '/api/new?year=2024')).status).toBe(422)
     const request = (path: string, data: object, origin = base) => fetch(base + '/api/' + path, {
       method: 'POST', headers: { origin, 'Content-Type': 'application/json' }, body: JSON.stringify(data),
     })
@@ -53,6 +57,7 @@ describe('serveur local', () => {
     const pdfResponse = await request('export', { project: demoProject(), format: 'pdf' })
     expect(pdfResponse.status).toBe(200)
     expect(pdfResponse.headers.get('content-type')).toBe('application/pdf')
+    expect(pdfResponse.headers.get('content-disposition')).toContain('fiscalutxo-aide-2086-2026.pdf')
     expect((await PDFDocument.load(await pdfResponse.arrayBuffer())).getPageCount()).toBe(1)
   })
 })

@@ -67,7 +67,9 @@ export async function export2086Pdf(result: Calculation): Promise<Uint8Array> {
     text('FISCALUTXO', 38, 803, 11, true, green)
     text('Aide à la saisie 2086', 38, 765, 29, true, green)
     text('Opérations ' + result.year + ' • Repères du formulaire 2086 millésime 2026', 38, 738, 12)
-    text('Le modèle de référence concerne les revenus 2025. Vérifier les cases du millésime 2027.', 38, 717, 9, false, muted)
+    const campaignNote = result.year === 2025 ? 'Campagne déclarative 2026 · revenus 2025' :
+      'Campagne déclarative 2027 · revenus 2026. Vérifier les cases du millésime 2027.'
+    text(campaignNote, 38, 717, 9, false, muted)
 
     strip(659, 37)
     text('51   Total net des prix de cession', 50, 674, 12, true)

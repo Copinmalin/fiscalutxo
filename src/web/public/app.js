@@ -1,4 +1,5 @@
 import { request } from './transport.js'
+import { fiscalPeriod, importedDate, inFiscalPeriod } from './period.js'
 
 const $ = id => document.getElementById(id)
 const operationForm = $('operation-form')
@@ -87,10 +88,15 @@ function download(blob, filename) {
 function rows() {
   return project.imports.flatMap(bundle => {
     const events = new Map(bundle.normalizedEvents.map(event => [event.sourceRef.rawRowId, event]))
-    return bundle.rawRows.map(row => ({
-      id: row.id, row, event: events.get(row.id), bundle, operation: project.operations[row.id],
-      title: bundle.source.name + ' · ' + bundle.import.fileName + ' · ligne ' + row.rowNumber,
-    }))
+    return bundle.rawRows.map(row => {
+      const event = events.get(row.id)
+      const date = importedDate(row.rawPayload, event?.occurredAt)
+      return {
+        id: row.id, row, event, bundle, date, operation: project.operations[row.id],
+        outsidePeriod: Boolean(date && !inFiscalPeriod(date, project.year)),
+        title: bundle.source.name + ' · ' + bundle.import.fileName + ' · ligne ' + row.rowNumber,
+      }
+    })
   })
 }
 
@@ -128,6 +134,9 @@ function suggestedQualification(entry) {
 }
 
 function render() {
+  $('fiscal-year').value = project.year
+  $('opening-title').textContent = 'Situation au 1er janvier ' + project.year
+  $('accounts-year').textContent = 'J’ai vérifié les comptes ouverts, détenus, utilisés ou clos en ' + project.year + '.'
   const importNodes = project.imports.map(bundle => {
     const info = element('span', bundle.source.name + ' · ' + bundle.import.fileName + ' — ' +
       statuses[bundle.import.importStatus] + ' (' + bundle.rawRows.length + ' lignes)' +
@@ -143,8 +152,13 @@ function render() {
     return item
   })
   $('import-list').replaceChildren(...importNodes)
+  const imported = rows()
+  const activeRows = imported.filter(entry => !entry.outsidePeriod)
+  const outside = imported.length - activeRows.length
+  $('operation-period').textContent = 'Du 1er janvier au 31 décembre ' + project.year + ' (heure de Paris).' +
+    (outside ? ' Lignes hors période conservées dans les imports : ' + outside + '.' : '')
   const operations = [
-    ...rows(),
+    ...activeRows,
     ...Object.entries(project.operations).filter(([, op]) => !op.rowId)
       .map(([id, operation]) => ({ id, operation, title: 'Saisie manuelle' })),
   ]
@@ -156,7 +170,7 @@ function render() {
     tr.dataset.id = entry.id
     tr.append(element('td', entry.bundle?.source.name ?? entry.title))
     tr.append(element('td', importedLabel(entry) || '—'))
-    tr.append(element('td', entry.operation?.date ?? entry.event?.occurredAt ?? 'À confirmer'))
+    tr.append(element('td', entry.operation?.date ?? entry.date ?? 'À confirmer'))
     const quantity = entry.operation?.sats ?? entry.event?.quantitySats
     tr.append(element('td', movementSats(quantity, entry.event?.direction)))
     tr.append(element('td', estimatedEuros(entry.event) ?? '—'))
@@ -216,12 +230,14 @@ function editOperation(entry = null) {
   const values = entry?.operation ?? {}
   const raw = entry?.row?.rawPayload ?? {}
   operationForm.reset()
-  const allowed = entry?.row ? Object.keys(labels) : ['achat', 'vente', 'paiement', 'hors_perimetre']
+  const allowed = entry?.row ? Object.keys(labels).filter(type =>
+    !entry.date || type === values.type || !['historique', 'post_cloture'].includes(type)
+  ) : ['achat', 'vente', 'paiement', 'hors_perimetre']
   fields.type.replaceChildren(...allowed.map(type => new Option(labels[type], type)))
   if (entry?.row) fields.type.prepend(new Option('Choisir une qualification', ''))
   const proposal = raw.type === 'depot' || raw.type === 'retrait' ? 'transfert' : raw.type
   fields.type.value = values.type ?? (allowed.includes(proposal) ? proposal : entry?.row ? '' : 'achat')
-  const sourceDate = entry?.event?.occurredAt ?? raw.date_utc ?? ''
+  const sourceDate = entry?.date ?? ''
   fields.date.value = (values.date ?? sourceDate ?? '').slice(0, 19)
   fields.sats.value = values.sats ?? entry?.event?.quantitySats ?? ''
   priceDrafts = {}
@@ -291,11 +307,15 @@ function updateOperationFields(selectedPeer) {
     fields[field].disabled = !show
     fields[field].required = show && (field !== 'peer' || type !== 'paiement')
   }
+  const { start, end } = fiscalPeriod(project.year)
+  fields.date.min = type === 'historique' || type === 'post_cloture' ? '' : start.slice(0, 19)
+  fields.date.max = type === 'historique' || type === 'post_cloture' ? '' :
+    new Date(Date.parse(end) - 1000).toISOString().slice(0, 19)
   fields.reference.required = type !== 'hors_perimetre'
   $('gross-label').querySelector('span').textContent = type === 'achat' ? 'Prix d’acquisition justifié en €' : 'Prix de cession avant frais en €'
   $('peer-label').textContent = type === 'paiement' ? 'Transfert lié si paiement de frais réseau' : 'Autre ligne du transfert ou original du doublon'
   const txid = selection?.event?.txid ?? selection?.row?.rawPayload.Txid
-  const candidates = rows().filter(item => item.id !== selection?.id)
+  const candidates = rows().filter(item => !item.outsidePeriod && item.id !== selection?.id)
   const linked = item => txid && item.event?.txid?.toLowerCase() === txid.toLowerCase()
   candidates.sort((a, b) => Number(Boolean(linked(b))) - Number(Boolean(linked(a))))
   fields.peer.replaceChildren(new Option('Choisir une ligne', ''),
@@ -478,16 +498,33 @@ $('calculate').addEventListener('click', () => void task(async () => {
 for (const node of document.querySelectorAll('[data-format]')) {
   node.addEventListener('click', () => void task(async () => {
     const format = node.dataset.format
-    const filename = format === 'pdf' ? 'fiscalutxo-aide-2086-2026.pdf' : 'fiscalutxo-2026.' + format
+    const filename = format === 'pdf' ? 'fiscalutxo-aide-2086-' + (project.year + 1) + '.pdf' : 'fiscalutxo-' + project.year + '.' + format
     download(await request('export', { project, format }, true), filename)
     status('Rapport ' + format.toUpperCase() + ' téléchargé.')
   }))
 }
 
+$('fiscal-year').addEventListener('change', event => {
+  const year = Number(event.target.value)
+  event.target.value = project.year
+  if (year === project.year) return
+  if (dirty && !confirm('Ouvrir un nouveau dossier pour cette campagne ? Les modifications non enregistrées seront perdues.')) return
+  void task(async () => {
+    project = await request('new', year)
+    dirty = false
+    ready = false
+    $('result').replaceChildren()
+    status('')
+    status('', false, 'import-status')
+    renderOpening()
+    render()
+  })
+})
+
 $('load-demo').addEventListener('click', () => {
   if (dirty && !confirm('Remplacer le dossier ouvert et ses modifications non enregistrées ?')) return
   void task(async () => {
-    project = await request('demo')
+    project = await request('demo', project.year)
     dirty = false
     ready = false
     $('result').replaceChildren()
@@ -518,7 +555,7 @@ $('open-file').addEventListener('change', event => {
 })
 $('save-button').addEventListener('click', () => {
   if (busy || !project) return
-  download(new Blob([JSON.stringify(project, null, 2) + '\n'], { type: 'application/json' }), 'fiscalutxo-dossier-2026.json')
+  download(new Blob([JSON.stringify(project, null, 2) + '\n'], { type: 'application/json' }), 'fiscalutxo-dossier-' + project.year + '.json')
   dirty = false
   status('Dossier téléchargé. Conservez ce fichier hors du dépôt.')
 })

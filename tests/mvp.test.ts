@@ -15,7 +15,7 @@ const finalSale: Operation = {
   ...sale, date: '2026-08-12T12:00:00.000Z', sats: 625_000, gross: 130_000, portfolio: 130_000,
 }
 const projectWith = (...operations: Operation[]): Project => ({
-  ...emptyProject(), complete: true, accountsReviewed: true,
+  ...emptyProject(2026), complete: true, accountsReviewed: true,
   operations: Object.fromEntries(operations.map((operation, index) => ['manual:' + index, operation])),
 })
 
@@ -74,6 +74,45 @@ describe('calcul fiscal 2026', () => {
       rowId: id, type: 'post_cloture', date: '2026-12-31T23:10:00Z', reference: 'Historique fictif',
     }
     expect(calculate(projectSchema.parse(project)).ready).toBe(true)
+  })
+})
+
+describe('campagne déclarative 2026', () => {
+  it('exclut les lignes datées hors période, même déjà qualifiées, et conserve les limites en heure de Paris', () => {
+    const input = [
+      '2023-04-01 12:00:00,2023,-0.00375000,0.01,,fictif-2023',
+      '2024-12-31 22:59:59,Hors ouverture,0.01,0.01,,fictif-avant',
+      '2024-12-31 23:00:00,Ouverture,0.01,0.01,,fictif-ouverture',
+      '2025-12-31 22:59:59,Fin,-0.00375000,0.01,,fictif-fin',
+      '2025-12-31 23:00:00,Hors clôture,invalide,0.01,,fictif-après',
+      '2026-01-05 10:00:00,2026,-0.00375000,0.01,,fictif-2026',
+    ]
+    const { project } = sourceFile({ ...emptyProject(), complete: true, accountsReviewed: true }, 'Wallet fictif',
+      sparrowHeader + input.join('\n'))
+    const [before, , buy, sell, , after] = project.imports[0]!.rawRows.map(row => row.id)
+    project.operations = {
+      [before!]: { ...sale, rowId: before!, date: '2025-04-01T12:00:00.000Z' },
+      [buy!]: { ...acquisition, rowId: buy!, date: '2024-12-31T23:00:00.000Z' },
+      [sell!]: { ...sale, rowId: sell!, date: '2025-12-31T22:59:59.000Z' },
+      [after!]: { rowId: after!, type: 'hors_perimetre' },
+    }
+    const saved = projectSchema.parse(JSON.parse(JSON.stringify(project)))
+    const result = calculate(saved)
+    expect(saved.imports[0]?.rawRows).toHaveLength(6)
+    expect(result).toMatchObject({ year: 2025, ready: true, proceeds: 45_000, capitalRemaining: 62_500 })
+    for (const format of ['csv', 'json'] as const) {
+      const report = exportReport(result, format) as string
+      expect(report).toContain('2025-12-31T22:59:59.000Z')
+      expect(report).not.toContain('2025-04-01T12:00:00.000Z')
+    }
+  })
+
+  it('demande une qualification si la date importée est inconnue', () => {
+    const { project } = sourceFile({ ...emptyProject(), complete: true, accountsReviewed: true }, 'Wallet fictif',
+      sparrowHeader + 'Unconfirmed,Date à vérifier,0.01,0.01,,fictif-inconnu')
+    expect(calculate(project).blockers).toEqual([{
+      id: project.imports[0]?.rawRows[0]?.id, message: 'Ligne source à qualifier ou à corriger',
+    }])
   })
 })
 

@@ -5,9 +5,8 @@ import { createSparrowImportBundle } from '../imports/import-bundle.js'
 import { parseFixedDecimal, parseSparrowTransactionsCsv, readCsv, type ParsedRawRow } from '../importers/sparrow-transactions-csv.js'
 import type { NormalizedEvent } from '../domain/normalized-event.js'
 
-export const YEAR = 2026
-export const YEAR_START = '2025-12-31T23:00:00.000Z'
-export const YEAR_END = '2026-12-31T23:00:00.000Z'
+export const fiscalYearSchema = z.union([z.literal(2025), z.literal(2026)])
+export const defaultFiscalYear = 2025
 const satoshis = z.number().int().min(0).max(2_100_000_000_000_000)
 const cents = z.number().int().min(0).max(100_000_000_000_000)
 const key = z.string().min(1).max(300)
@@ -69,7 +68,7 @@ const bundleSchema = z.object({
 })
 export const projectSchema = z.object({
   schemaVersion: z.literal('fiscalutxo-project.v1'),
-  year: z.literal(YEAR),
+  year: fiscalYearSchema,
   complete: z.boolean(),
   opening: z.object({ sats: satoshis, acquisitions: cents, used: cents, reference }),
   imports: z.array(bundleSchema),
@@ -120,27 +119,27 @@ export type Project = z.infer<typeof projectSchema>
 export type Bundle = z.infer<typeof bundleSchema>
 export type Operation = z.infer<typeof operationSchema>
 
-export function emptyProject(): Project {
+export function emptyProject(year: Project['year'] = defaultFiscalYear): Project {
   return {
-    schemaVersion: 'fiscalutxo-project.v1', year: YEAR, complete: false,
-    opening: { sats: 0, acquisitions: 0, used: 0, reference: 'Aucun avoir au 1er janvier 2026' },
+    schemaVersion: 'fiscalutxo-project.v1', year, complete: false,
+    opening: { sats: 0, acquisitions: 0, used: 0, reference: 'Aucun avoir au 1er janvier ' + year },
     imports: [], operations: {}, accounts: [], accountsReviewed: false,
   }
 }
 
-export function demoProject(): Project {
+export function demoProject(year: Project['year'] = defaultFiscalYear): Project {
   return {
-    ...emptyProject(), complete: true, accountsReviewed: true,
+    ...emptyProject(year), complete: true, accountsReviewed: true,
     operations: {
       'manual:demo-acquisition': {
-        type: 'achat', date: '2026-01-12T12:00:00.000Z', sats: 1_000_000, gross: 100_000, reference: 'Achat fictif',
+        type: 'achat', date: year + '-01-12T12:00:00.000Z', sats: 1_000_000, gross: 100_000, reference: 'Achat fictif',
       },
       'manual:demo-vente-1': {
-        type: 'vente', date: '2026-03-12T12:00:00.000Z', sats: 375_000, gross: 45_000, fee: 0,
+        type: 'vente', date: year + '-03-12T12:00:00.000Z', sats: 375_000, gross: 45_000, fee: 0,
         portfolio: 120_000, reference: 'Vente fictive de mars', valuationReference: 'Valorisation fictive',
       },
       'manual:demo-vente-2': {
-        type: 'vente', date: '2026-08-12T12:00:00.000Z', sats: 625_000, gross: 130_000, fee: 0,
+        type: 'vente', date: year + '-08-12T12:00:00.000Z', sats: 625_000, gross: 130_000, fee: 0,
         portfolio: 130_000, reference: 'Vente fictive d’août', valuationReference: 'Valorisation fictive',
       },
     },
