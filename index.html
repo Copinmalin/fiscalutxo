@@ -4,7 +4,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>FiscalUTXO · Dossier Bitcoin 2026</title>
+  <title>FiscalUTXO · Dossier Bitcoin</title>
   <link rel="stylesheet" href="./style.css">
   <script type="module" src="./app.js"></script>
 </head>
@@ -22,7 +22,12 @@
   <p id="status" role="status" aria-live="polite"></p>
   <main id="workspace">
     <div class="intro">
-      <div><p class="eyebrow">Année fiscale 2026</p><h1>Dossier Bitcoin</h1></div>
+      <div><h1>Dossier Bitcoin</h1>
+        <label>Campagne déclarative<select id="fiscal-year">
+          <option value="2025">2026 · opérations 2025</option>
+          <option value="2026">2027 · opérations 2026</option>
+        </select></label>
+      </div>
       <p>Préparez l’annexe 2086 et retrouvez les montants à reporter. Les fichiers et les calculs restent sur cet appareil.</p>
     </div>
 
@@ -46,7 +51,7 @@
           <ul id="import-list" class="records"></ul>
         </div>
         <div>
-          <h3>Situation au 1er janvier 2026</h3>
+          <h3 id="opening-title">Situation à l’ouverture</h3>
           <form id="opening-form">
             <label>Solde de tout le foyer en sats<input name="sats" type="number" min="0" step="1" required></label>
             <label>Prix d’acquisition cumulés en €<input name="acquisitions" inputmode="decimal" required></label>
@@ -60,25 +65,54 @@
 
     <section id="operations" aria-labelledby="operations-title">
       <div class="heading-row"><h2 id="operations-title">Opérations</h2><button type="button" class="secondary" id="add-operation">Ajouter une opération</button></div>
-      <p id="operations-empty">Importez un fichier ou ajoutez un achat, une vente ou un paiement.</p>
-      <div class="table-scroll" id="table-scroll" hidden>
+      <p id="operation-period"></p>
+      <p id="operations-empty">Aucune opération à qualifier dans le dossier.</p>
+      <div class="table-scroll" id="table-scroll" role="region" aria-label="Tableau des opérations" tabindex="0" hidden>
         <table>
-          <thead><tr><th scope="col">Source</th><th scope="col">Date UTC</th><th scope="col">Variation en sats</th><th scope="col">Qualification</th><th scope="col">Action</th></tr></thead>
+          <thead>
+            <tr><th scope="col" class="col-source">Source</th><th scope="col" class="col-label">Label</th>
+              <th scope="col" class="col-date">Date UTC</th><th scope="col" class="col-sats">Sats</th>
+              <th scope="col" class="col-eur">Estim. EUR</th><th scope="col" class="col-status">Qualification</th></tr>
+          </thead>
           <tbody id="operation-list"></tbody>
         </table>
       </div>
       <dialog id="operation-dialog" aria-labelledby="operation-title">
         <form id="operation-form">
           <div class="heading-row"><h3 id="operation-title">Qualifier l’opération</h3><button type="button" class="secondary" id="cancel-operation">Annuler</button></div>
-          <p id="row-summary"></p>
-          <label>Qualification<select name="type"></select></label>
+          <p id="row-source" hidden></p>
+          <dl id="row-summary" class="operation-summary" aria-label="Données importées" hidden>
+            <div><dt>Ligne</dt><dd id="row-line"></dd></div>
+            <div><dt>Label</dt><dd id="row-label"></dd></div>
+            <div><dt>Value (sats)</dt><dd id="row-sats"></dd></div>
+            <div><dt>Value (EUR) <small>Indicative</small></dt><dd id="row-eur-estimate"></dd></div>
+          </dl>
+          <ul id="row-diagnostics" aria-label="Anomalies d’import" hidden></ul>
+          <button type="button" id="apply-label-suggestion" class="secondary" hidden></button>
+          <label>Qualification<select name="type" required></select></label>
           <div class="input-grid">
             <label data-field="date">Date et heure UTC<input name="date" type="datetime-local" step="1"></label>
             <label data-field="sats">Quantité réelle en sats<input name="sats" type="number" min="1" step="1"></label>
-            <label data-field="gross" id="gross-label"><span>Prix en €</span><input name="gross" inputmode="decimal"></label>
+            <div id="gross-field">
+              <label data-field="gross" id="gross-label"><span>Prix en €</span><input name="gross" inputmode="decimal"><small id="acquisition-estimate-note" hidden>Estimation EUR importée à vérifier avec le justificatif.</small></label>
+              <div id="disposal-estimate" hidden>
+                <button id="apply-disposal-estimate" type="button" class="secondary" aria-describedby="disposal-estimate-help"></button>
+                <small id="disposal-estimate-help">Estimation au cours journalier Sparrow. Vérifiez le montant de la contrepartie sur le justificatif.</small>
+              </div>
+            </div>
             <label data-field="fee">Frais de cession justifiés en €<input name="fee" inputmode="decimal" placeholder="0 si aucun"></label>
             <label data-field="portfolio">Valeur globale avant cession en €<input name="portfolio" inputmode="decimal"></label>
             <label data-field="valuationReference">Justificatif de la valorisation<input name="valuationReference" maxlength="500"></label>
+          </div>
+          <div id="portfolio-estimate" hidden>
+            <p id="portfolio-estimate-message" aria-live="polite"></p>
+            <div id="portfolio-estimate-controls" hidden>
+              <label>Autres avoirs Bitcoin du foyer à cette date, en sats
+                <input id="other-holdings" inputmode="numeric" maxlength="16" placeholder="0 si aucun" aria-describedby="portfolio-estimate-help">
+              </label>
+              <p id="portfolio-estimate-help"><small>Vérifiez que le total couvre tous les wallets et plateformes du foyer. Renseignez le justificatif de la valorisation séparément.</small></p>
+              <button id="apply-portfolio-estimate" type="button" class="secondary" disabled>Reprendre l’estimation</button>
+            </div>
           </div>
           <label>Justificatif ou référence<input name="reference" maxlength="500"></label>
           <label data-field="peer"><span id="peer-label">Ligne liée</span><select name="peer"></select></label>
@@ -99,7 +133,7 @@
         <button>Ajouter le compte</button>
       </form>
       <ul id="account-list" class="records"></ul>
-      <label class="check"><input type="checkbox" id="accounts-reviewed"> J’ai vérifié les comptes ouverts, détenus, utilisés ou clos en 2026.</label>
+      <label class="check"><input type="checkbox" id="accounts-reviewed"> <span id="accounts-year"></span></label>
     </section>
 
     <section id="resultats" aria-labelledby="results-title">
@@ -110,6 +144,7 @@
           <button type="button" class="secondary" data-format="csv" disabled>CSV</button>
           <button type="button" class="secondary" data-format="json" disabled>JSON</button>
           <button type="button" class="secondary" data-format="xlsx" disabled>XLSX</button>
+          <button type="button" class="secondary" data-format="pdf" disabled>PDF 2086</button>
         </div>
       </div>
       <div id="result" aria-live="polite"></div>
