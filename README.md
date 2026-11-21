@@ -4,13 +4,15 @@ FiscalUTXO est une application web locale qui aide un foyer fiscal français à 
 
 ## Essai dans le navigateur
 
-Ouvrir [la démo FiscalUTXO](https://copinmalin.github.io/fiscalutxo/) et choisir **Essayer avec un exemple** pour tester les résultats et les exports avec un dossier fictif. Le calcul et le traitement des fichiers se font dans le navigateur. Les dossiers peuvent être sauvegardés en JSON.
+1. Ouvrir [la démo FiscalUTXO](https://copinmalin.github.io/fiscalutxo/) sur ordinateur ou mobile.
+2. Cliquer sur **Essayer avec un exemple**, puis sur **Contrôler le dossier** dans la section **Résultats**. Le dossier fictif affiche une plus-value de 750 €.
+3. Essayer les exports CSV, JSON ou XLSX. Pour reprendre ensuite un dossier, utiliser **Enregistrer le dossier**, puis **Ouvrir** pour recharger le fichier JSON produit.
 
-`npm run build:pages` génère l’édition statique.
+La démo fonctionne sans installation ni compte. Les fichiers et les calculs restent dans le navigateur. Si le sélecteur de fichiers bloque sur mobile, utiliser **Coller le contenu à la place** dans le formulaire d’import.
 
 ## Démarrer en local
 
-Avec Node.js 22.12 ou plus récent dans une branche LTS prise en charge :
+Depuis le dépôt, avec Node.js 22.12 ou plus récent dans une branche LTS prise en charge :
 
 ```bash
 npm ci
@@ -35,6 +37,8 @@ fiscalutxo/
 ├── AGENTS.md
 ├── package.json
 ├── tsconfig.json
+├── scripts/
+│   └── build-pages.mjs
 ├── src/
 │   ├── cli/
 │   ├── domain/
@@ -53,6 +57,7 @@ fiscalutxo/
 │   ├── TAX_FR.md
 │   ├── IMPORTS.md
 │   ├── ARCHITECTURE.md
+│   ├── COMPARATIF_CFF.md
 │   ├── CLI.md
 │   ├── MANUAL_REAL_TEST.md
 │   ├── REMOTE_REAL_TEST.md
@@ -86,6 +91,7 @@ fiscalutxo/
 - [`docs/TAX_FR.md`](docs/TAX_FR.md) : notes fiscales françaises utiles au projet.
 - [`docs/IMPORTS.md`](docs/IMPORTS.md) : formats CSV et règles d’import.
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) : architecture technique cible.
+- [`docs/COMPARATIF_CFF.md`](docs/COMPARATIF_CFF.md) : comparaison avec CryptoFiscaFacile et décisions retenues pour le MVP.
 - [`docs/CLI.md`](docs/CLI.md) : usage de la CLI locale.
 - [`docs/MANUAL_REAL_TEST.md`](docs/MANUAL_REAL_TEST.md) : scénario de test manuel réel.
 - [`docs/REMOTE_REAL_TEST.md`](docs/REMOTE_REAL_TEST.md) : scénario de test distant sécurisé.
@@ -101,7 +107,10 @@ npm ci
 npm run lint
 npm run test
 npm run build
+npm run build:pages
 ```
+
+`npm run build:pages` génère l’édition statique dans `dist/pages/`. La branche `gh-pages` sert la démo publique.
 
 Utiliser la CLI après compilation :
 
