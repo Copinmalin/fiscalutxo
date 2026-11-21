@@ -69,8 +69,14 @@
       <dialog id="operation-dialog" aria-labelledby="operation-title">
         <form id="operation-form">
           <div class="heading-row"><h3 id="operation-title">Qualifier l’opération</h3><button type="button" class="secondary" id="cancel-operation">Annuler</button></div>
-          <p id="row-summary"></p>
-          <p id="row-eur-estimate" hidden></p>
+          <dl id="row-summary" class="operation-summary" aria-label="Données importées" hidden>
+            <div><dt>Ligne</dt><dd id="row-line"></dd></div>
+            <div><dt>Date (UTC)</dt><dd id="row-date"></dd></div>
+            <div class="operation-summary-label"><dt>Label</dt><dd id="row-label"></dd></div>
+            <div><dt>Value (sats)</dt><dd id="row-sats"></dd></div>
+            <div><dt>Value (EUR) <small>Indicative</small></dt><dd id="row-eur-estimate"></dd></div>
+          </dl>
+          <ul id="row-diagnostics" aria-label="Anomalies d’import" hidden></ul>
           <button type="button" id="apply-label-suggestion" class="secondary" hidden></button>
           <label>Qualification<select name="type" required></select></label>
           <div class="input-grid">

@@ -104,6 +104,11 @@ function importedLabel(entry) {
   return entry.event?.label || entry.row?.rawPayload.Label?.trim() || ''
 }
 
+function movementSats(quantity, direction) {
+  if (quantity === undefined) return '—'
+  return (direction === 'out' && quantity > 0 ? '−' : '') + quantity.toLocaleString('fr-FR')
+}
+
 function suggestedQualification(entry) {
   const label = importedLabel(entry).split(':', 1)[0].trim().toLowerCase()
   const proposal = labelSuggestions.get(label)
@@ -146,7 +151,7 @@ function render() {
     tr.append(element('td', importedLabel(entry) || '—'))
     tr.append(element('td', entry.operation?.date ?? entry.event?.occurredAt ?? 'À confirmer'))
     const quantity = entry.operation?.sats ?? entry.event?.quantitySats
-    tr.append(element('td', quantity === undefined ? '—' : (entry.event?.direction === 'out' ? '−' : '') + quantity.toLocaleString('fr-FR')))
+    tr.append(element('td', movementSats(quantity, entry.event?.direction)))
     tr.append(element('td', estimatedEuros(entry.event) ?? '—'))
     const proposal = entry.operation ? null : suggestedQualification(entry)
     tr.append(element('td', entry.operation ? labels[entry.operation.type] :
@@ -217,15 +222,17 @@ function editOperation(entry = null) {
   fields.portfolio.value = values.portfolio === undefined ? raw.portefeuille_eur ?? '' : values.portfolio / 100
   fields.reference.value = values.reference ?? raw.justificatif ?? ''
   fields.valuationReference.value = values.valuationReference ?? raw.valorisation ?? ''
-  $('row-summary').textContent = entry?.row ? [
-    entry.title,
-    ...entry.row.parseErrors,
-    ...Object.entries(raw).map(([field, value]) => field + ' = ' + value),
-  ].join(' · ') : 'Saisie manuelle'
-  const estimate = estimatedEuros(entry?.event)
-  $('row-eur-estimate').hidden = estimate === null
-  $('row-eur-estimate').textContent = estimate === null ? '' :
-    'Estimation EUR importée : ' + estimate + '. Le prix fiscal se renseigne dans le champ ci-dessous.'
+  $('row-summary').hidden = !entry?.row
+  if (entry?.row) {
+    $('row-line').textContent = entry.row.rowNumber
+    $('row-date').textContent = raw['Date (UTC)'] || raw.date_utc || entry.event?.occurredAt || '—'
+    $('row-label').textContent = importedLabel(entry) || '—'
+    $('row-sats').textContent = movementSats(entry.event?.quantitySats, entry.event?.direction)
+    $('row-eur-estimate').textContent = estimatedEuros(entry.event) ?? '—'
+  }
+  const diagnostics = entry?.row?.parseErrors ?? []
+  $('row-diagnostics').hidden = diagnostics.length === 0
+  $('row-diagnostics').replaceChildren(...diagnostics.map(message => element('li', message)))
   const suggestion = entry?.row && !entry.operation ? suggestedQualification(entry) : null
   $('apply-label-suggestion').hidden = !suggestion
   $('apply-label-suggestion').textContent = suggestion ? 'Utiliser la suggestion : ' + labels[suggestion] : ''
