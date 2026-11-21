@@ -128,22 +128,15 @@ export function emptyProject(year: Project['year'] = defaultFiscalYear): Project
 }
 
 export function demoProject(year: Project['year'] = defaultFiscalYear): Project {
-  return {
-    ...emptyProject(year), complete: true, accountsReviewed: true,
-    operations: {
-      'manual:demo-acquisition': {
-        type: 'achat', date: year + '-01-12T12:00:00.000Z', sats: 1_000_000, gross: 100_000, reference: 'Achat fictif',
-      },
-      'manual:demo-vente-1': {
-        type: 'vente', date: year + '-03-12T12:00:00.000Z', sats: 375_000, gross: 45_000, fee: 0,
-        portfolio: 120_000, reference: 'Vente fictive de mars', valuationReference: 'Valorisation fictive',
-      },
-      'manual:demo-vente-2': {
-        type: 'vente', date: year + '-08-12T12:00:00.000Z', sats: 625_000, gross: 130_000, fee: 0,
-        portfolio: 130_000, reference: 'Vente fictive d’août', valuationReference: 'Valorisation fictive',
-      },
-    },
-  }
+  return ingest({
+    project: { ...emptyProject(year), complete: true, accountsReviewed: true },
+    format: 'sparrow', name: 'sparrow-demo.csv', source: 'Wallet fictif',
+    content: [
+      'Date (UTC),Label,Value (sats),Balance (sats),Fee (sats),Value (EUR),Txid',
+      year + '-01-12 12:00:00,Achat : acquisition fictive,1000000,1000000,,1000.00,achat-fictif',
+      year + '-03-12 12:00:00,Vente : cession fictive,-750000,250000,0,-1500.00,vente-fictive',
+    ].join('\n') + '\n',
+  }).project
 }
 
 export const importInputSchema = z.object({

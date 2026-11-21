@@ -660,7 +660,7 @@ $('load-demo').addEventListener('click', () => {
     $('result').replaceChildren()
     renderOpening()
     render()
-    status('Dossier fictif chargé. Ouvrez les résultats et lancez le contrôle.')
+    status('Dossier fictif chargé. Ouvrez les deux lignes du tableau pour qualifier l’achat et la vente.')
   })
 })
 
