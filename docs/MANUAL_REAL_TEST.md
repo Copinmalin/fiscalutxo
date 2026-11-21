@@ -9,7 +9,7 @@ Flux testé :
 ```text
 CSV Sparrow local
 → CLI FiscalUTXO
-→ parseur Sparrow V0
+→ parseur Sparrow v1
 → NormalizedEvent
 → bundle local d’import
 → JSON local
@@ -47,7 +47,7 @@ mkdir -p ~/fiscalutxo-private-test
 Depuis le dépôt FiscalUTXO :
 
 ```bash
-npm install
+npm ci
 npm run lint
 npm run test
 npm run build
@@ -133,13 +133,13 @@ Points à vérifier :
 ```text
 [ ] schemaVersion vaut local-import-bundle.v0.
 [ ] source.name vaut Sparrow Wallet.
-[ ] import.parserVersion vaut sparrow-transactions-csv.v0.
+[ ] import.parserVersion vaut sparrow-transactions-csv.v1.
 [ ] rawRows contient le nombre attendu de lignes.
 [ ] normalizedEvents contient des événements rattachés aux rawRows.
 [ ] Chaque normalizedEvent.sourceRef.rawRowId correspond à une rawRow.id.
 [ ] Les sorties Sparrow restent manual_review + needs_review.
 [ ] Les entrées Sparrow restent manual_review + needs_review.
-[ ] Les lignes Unconfirmed sont marquées needs_review ou partial.
+[ ] Les lignes Unconfirmed sont marquées needs_review ou partial, avec occurredAt null.
 [ ] L’export ne contient normalement pas Value (EUR) si Exchange rate source = None.
 [ ] Si Value (EUR) existe malgré tout, elle est traitée comme indicative seulement.
 [ ] Le fichier ne prétend pas calculer la plus-value fiscale.

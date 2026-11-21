@@ -61,3 +61,16 @@ Les fichiers CSV et JSON produits peuvent contenir des données patrimoniales se
 - Pas d’export XLSX.
 - Pas de calcul fiscal 2086 complet.
 - Les opérations restent à qualifier manuellement si elles sont ambiguës.
+
+## Compatibilité et diagnostics
+
+La CLI lit les en-têtes historiques et les en-têtes avec unité de Sparrow 2.5.6. Les imports utilisent le parseur `sparrow-transactions-csv.v1`. Les bundles historiques V0 restent chargeables dans l’application. Une transaction non confirmée a une date `null` et nécessite une revue.
+
+| Code | Résultat |
+|---|---|
+| 0 | Import complet ou aide |
+| 1 | Arguments ou lecture/écriture impossibles |
+| 2 | CSV refusé |
+| 3 | Import partiel avec diagnostics par ligne |
+
+L’option `--out` crée un nouveau fichier et refuse d’écraser un fichier existant. En cas de CSV refusé ou d’import partiel, le JSON conserve les diagnostics.

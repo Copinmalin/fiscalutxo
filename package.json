@@ -11,7 +11,7 @@
     "build": "tsc -p tsconfig.json",
     "cli": "node ./dist/src/cli/fiscalutxo.js",
     "lint": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run"
+    "test": "vitest run --dir tests"
   },
   "keywords": [
     "bitcoin",
@@ -24,6 +24,12 @@
   "devDependencies": {
     "@types/node": "^22.0.0",
     "typescript": "^5.0.0",
-    "vitest": "^3.0.0"
+    "vitest": "^5.1.1"
+  },
+  "dependencies": {
+    "csv-parse": "^7.0.3"
+  },
+  "engines": {
+    "node": "^22.12.0 || ^24.0.0 || >=26.0.0"
   }
 }

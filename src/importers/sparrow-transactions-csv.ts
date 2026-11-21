@@ -1,8 +1,9 @@
+import { parse } from 'csv-parse/sync'
 import type { FiatValue, NormalizedEvent, SourceRef } from '../domain/normalized-event.js'
 import { validateNormalizedEvent } from '../domain/normalized-event.js'
 
 export const SPARROW_TRANSACTIONS_CSV_PARSER = 'sparrow-transactions-csv'
-export const SPARROW_TRANSACTIONS_CSV_PARSER_VERSION = 'sparrow-transactions-csv.v0'
+export const SPARROW_TRANSACTIONS_CSV_PARSER_VERSION = 'sparrow-transactions-csv.v1'
 
 const REQUIRED_HEADERS = ['Date (UTC)', 'Label', 'Value', 'Balance', 'Fee', 'Txid'] as const
 
@@ -14,6 +15,7 @@ export type ParsedRawRow = {
   rawPayload: SparrowRawRow
   parseStatus: 'parsed' | 'needs_review' | 'error'
   parseErrors: string[]
+  fields: string[]
 }
 
 export type SparrowImportContext = {
@@ -31,14 +33,29 @@ export type SparrowParseResult = {
 
 export function parseSparrowTransactionsCsv(csv: string, context: SparrowImportContext): SparrowParseResult {
   const errors: string[] = []
-  const records = parseCsvRecords(csv)
+  let records: CsvRecord[]
+  try {
+    records = readCsv(csv, '#')
+  } catch {
+    return emptyResult(['Malformed CSV: check quoting and delimiters'])
+  }
 
   if (records.length === 0) {
     return emptyResult(['CSV is empty'])
   }
 
-  const headers = records[0]?.map((header) => header.trim()) ?? []
-  const missingHeaders = REQUIRED_HEADERS.filter((header) => !headers.includes(header))
+  const headers = records[0]?.record.map((header) => header.trim()) ?? []
+  const amountHeaders = headers.map(header => /^(Value|Balance|Fee) \((BTC|sats?)\)$/i.exec(header))
+  const units = amountHeaders.flatMap(match => match?.[2] ? [match[2].toLowerCase() === 'btc' ? 'btc' : 'sats'] : [])
+  const unit = units[0]
+  const mapped = headers.map((header, index) => amountHeaders[index]?.[1] ?? header)
+  const missingHeaders = REQUIRED_HEADERS.filter((header) => !mapped.includes(header))
+  if (new Set(mapped).size !== mapped.length || mapped.includes('')) {
+    return emptyResult(['CSV headers must be unique and non-empty'])
+  }
+  if (unit && (units.length !== 3 || units.some(value => value !== unit))) {
+    return emptyResult(['Sparrow amount headers must use the same Bitcoin unit'])
+  }
 
   if (missingHeaders.length > 0) {
     return emptyResult([`Missing required headers: ${missingHeaders.join(', ')}`])
@@ -47,8 +64,9 @@ export function parseSparrowTransactionsCsv(csv: string, context: SparrowImportC
   const rows: ParsedRawRow[] = []
   const events: NormalizedEvent[] = []
 
-  records.slice(1).forEach((record, index) => {
-    const rowNumber = index + 2
+  const seen = new Map<string, string>()
+  records.slice(1).forEach(({ record, info }) => {
+    const rowNumber = info.lines
 
     if (record.every((value) => value.trim() === '')) {
       return
@@ -57,21 +75,32 @@ export function parseSparrowTransactionsCsv(csv: string, context: SparrowImportC
     const rawPayload = buildRawPayload(headers, record)
     const rawRowId = buildRawRowId(context.importId, rowNumber)
     const rowErrors: string[] = []
+    const canonical = buildRawPayload(mapped, record)
+    const txid = canonical.Txid?.toLowerCase()
+    if (record.length !== headers.length) rowErrors.push('Unexpected number of CSV columns')
+    const signature = JSON.stringify(record)
+    const previous = txid ? seen.get(txid) : undefined
+    if (previous !== undefined) {
+      rowErrors.push(previous === signature ? 'Duplicate transaction row' : 'Conflicting rows for the same transaction')
+    }
+    if (!txid) rowErrors.push('Missing txid')
 
-    const event = toNormalizedEvent(rawPayload, {
+    const event = record.length === headers.length && previous === undefined ? toNormalizedEvent(canonical, {
       sourceId: context.sourceId,
       importId: context.importId,
       rawRowId,
       parserVersion: SPARROW_TRANSACTIONS_CSV_PARSER_VERSION,
-    }, rowErrors)
+    }, rowErrors, unit) : null
 
+    if (txid && event) seen.set(txid, signature)
     const parseStatus = rowErrors.length === 0 ? 'parsed' : event ? 'needs_review' : 'error'
 
     rows.push({
       id: rawRowId,
       rowNumber,
       rawPayload,
-      parseStatus,
+      fields: record,
+      parseStatus: previous === signature ? 'needs_review' : parseStatus,
       parseErrors: rowErrors,
     })
 
@@ -89,13 +118,15 @@ export function parseSparrowTransactionsCsv(csv: string, context: SparrowImportC
   }
 }
 
-function toNormalizedEvent(raw: SparrowRawRow, sourceRef: SourceRef, rowErrors: string[]): NormalizedEvent | null {
+function toNormalizedEvent(raw: SparrowRawRow, sourceRef: SourceRef, rowErrors: string[], unit?: string): NormalizedEvent | null {
   const occurredAt = parseSparrowDate(raw['Date (UTC)'], rowErrors)
-  const valueSats = parseBitcoinAmountToSats(raw.Value, 'Value', rowErrors)
-  const feeSats = parseOptionalBitcoinAmountToSats(raw.Fee, 'Fee', rowErrors)
-  const fiat = parseOptionalEurValue(raw)
+  const valueSats = parseBitcoinAmountToSats(raw.Value, 'Value', rowErrors, unit)
+  const feeSats = parseOptionalBitcoinAmountToSats(raw.Fee, 'Fee', rowErrors, unit)
+  const fiat = parseOptionalEurValue(raw, unit)
+  if (raw['Value (EUR)']?.trim() && !fiat) rowErrors.push('Invalid indicative EUR value')
 
-  if (valueSats === null) {
+  if (valueSats === null || Math.abs(valueSats) > 2_100_000_000_000_000) {
+    if (valueSats !== null) rowErrors.push('Value exceeds the maximum Bitcoin supply')
     return null
   }
 
@@ -106,7 +137,7 @@ function toNormalizedEvent(raw: SparrowRawRow, sourceRef: SourceRef, rowErrors: 
     id: buildEventId(sourceRef.importId, sourceRef.rawRowId),
     schemaVersion: 'normalized-event.v0',
     sourceRef,
-    occurredAt: occurredAt ?? new Date(0).toISOString(),
+    occurredAt,
     timezone: 'UTC',
     asset: 'BTC',
     quantitySats: Math.abs(valueSats),
@@ -138,6 +169,7 @@ function toNormalizedEvent(raw: SparrowRawRow, sourceRef: SourceRef, rowErrors: 
   const validation = validateNormalizedEvent(event)
   if (!validation.valid) {
     rowErrors.push(...validation.errors)
+    return null
   }
 
   return event
@@ -198,7 +230,7 @@ function parseSparrowDate(value: string | undefined, errors: string[]): string |
   const iso = `${year}-${month}-${day}T${hour}:${minute}:${second}Z`
   const timestamp = Date.parse(iso)
 
-  if (!Number.isFinite(timestamp)) {
+  if (!Number.isFinite(timestamp) || new Date(timestamp).toISOString().replace('.000Z', 'Z') !== iso) {
     errors.push('Date (UTC) is invalid')
     return null
   }
@@ -206,15 +238,15 @@ function parseSparrowDate(value: string | undefined, errors: string[]): string |
   return iso
 }
 
-function parseBitcoinAmountToSats(value: string | undefined, fieldName: string, errors: string[]): number | null {
-  const trimmed = normalizeNumericString(value)
+function parseBitcoinAmountToSats(value: string | undefined, fieldName: string, errors: string[], unit?: string): number | null {
+  const trimmed = value?.trim()
 
   if (!trimmed) {
     errors.push(`${fieldName} is required`)
     return null
   }
 
-  const sats = parseAmountToSats(trimmed)
+  const sats = parseAmountToSats(trimmed, unit)
   if (sats === null) {
     errors.push(`${fieldName} must be a BTC decimal or sats integer`)
     return null
@@ -223,14 +255,14 @@ function parseBitcoinAmountToSats(value: string | undefined, fieldName: string, 
   return sats
 }
 
-function parseOptionalBitcoinAmountToSats(value: string | undefined, fieldName: string, errors: string[]): number | null {
-  const trimmed = normalizeNumericString(value)
+function parseOptionalBitcoinAmountToSats(value: string | undefined, fieldName: string, errors: string[], unit?: string): number | null {
+  const trimmed = value?.trim()
 
   if (!trimmed) {
     return null
   }
 
-  const sats = parseAmountToSats(trimmed)
+  const sats = parseAmountToSats(trimmed, unit)
   if (sats === null) {
     errors.push(`${fieldName} must be a BTC decimal or sats integer`)
     return null
@@ -239,41 +271,28 @@ function parseOptionalBitcoinAmountToSats(value: string | undefined, fieldName: 
   return Math.abs(sats)
 }
 
-function parseAmountToSats(value: string): number | null {
-  const sign = value.startsWith('-') ? -1 : 1
-  const unsigned = value.replace(/^[+-]/, '')
-
-  if (/^\d+$/.test(unsigned)) {
-    return sign * Number.parseInt(unsigned, 10)
-  }
-
-  const decimalMatch = /^(\d+)\.(\d{1,8})$/.exec(unsigned)
-  if (!decimalMatch) {
-    return null
-  }
-
-  const wholePart = decimalMatch[1]
-  const fractionalPart = decimalMatch[2]
-
-  if (!wholePart || !fractionalPart) {
-    return null
-  }
-
-  const wholeSats = Number.parseInt(wholePart, 10) * 100_000_000
-  const fractionalSats = Number.parseInt(fractionalPart.padEnd(8, '0'), 10)
-
-  return sign * (wholeSats + fractionalSats)
+function parseAmountToSats(value: string, unit?: string): number | null {
+  if (unit === 'btc') return parseFixedDecimal(value, 8, true)
+  if (unit) return /^[-+]?\d+$/.test(value) ? parseFixedDecimal(value, 0) : null
+  const normalized = value.replace(/,/g, '')
+  if (value.includes(',') && !/^[-+]?\d{1,3}(?:,\d{3})+(?:\.\d{1,8})?$/.test(value)) return null
+  return parseLegacyAmount(normalized)
 }
 
-function parseOptionalEurValue(raw: SparrowRawRow): FiatValue | undefined {
+function parseLegacyAmount(value: string): number | null {
+  return parseFixedDecimal(value, value.includes('.') ? 8 : 0)
+}
+
+function parseOptionalEurValue(raw: SparrowRawRow, unit?: string): FiatValue | undefined {
   const value = raw['Value (EUR)']
-  const normalized = normalizeNumericString(value)
+  const normalized = value?.trim()
 
   if (!normalized) {
     return undefined
   }
 
-  const cents = parseEuroCents(normalized)
+  const withGrouping = !unit && /^[-+]?\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?$/.test(normalized)
+  const cents = parseFixedDecimal(withGrouping ? normalized.replace(/,/g, '') : normalized, 2, true)
   if (cents === null) {
     return undefined
   }
@@ -286,27 +305,14 @@ function parseOptionalEurValue(raw: SparrowRawRow): FiatValue | undefined {
   }
 }
 
-function parseEuroCents(value: string): number | null {
-  const sign = value.startsWith('-') ? -1 : 1
-  const unsigned = value.replace(/^[+-]/, '')
-  const match = /^(\d+)(?:\.(\d{1,2}))?$/.exec(unsigned)
-
-  if (!match) {
-    return null
-  }
-
-  const euros = match[1]
-  const cents = match[2] ?? '0'
-
-  if (!euros) {
-    return null
-  }
-
-  return sign * (Number.parseInt(euros, 10) * 100 + Number.parseInt(cents.padEnd(2, '0'), 10))
-}
-
-function normalizeNumericString(value: string | undefined): string {
-  return value?.trim().replace(/,/g, '') ?? ''
+export function parseFixedDecimal(value: string, places: number, decimalComma = false): number | null {
+  const input = decimalComma ? value.replace(',', '.') : value
+  const pattern = places ? new RegExp('^([+-]?)(\\d+)(?:\\.(\\d{1,' + places + '}))?$') : /^([+-]?)(\d+)$/
+  const match = pattern.exec(input)
+  if (!match || !match[2]) return null
+  const total = BigInt(match[2] + (match[3] ?? '').padEnd(places, '0'))
+  if (total > BigInt(Number.MAX_SAFE_INTEGER)) return null
+  return Number(total) * (match[1] === '-' ? -1 : 1)
 }
 
 function buildRawPayload(headers: string[], record: string[]): SparrowRawRow {
@@ -334,54 +340,14 @@ function emptyResult(errors: string[]): SparrowParseResult {
   }
 }
 
-function parseCsvRecords(csv: string): string[][] {
-  const records: string[][] = []
-  let currentRecord: string[] = []
-  let currentValue = ''
-  let inQuotes = false
+type CsvRecord = { record: string[]; info: { lines: number } }
 
-  for (let index = 0; index < csv.length; index += 1) {
-    const char = csv[index]
-    const next = csv[index + 1]
-
-    if (char === undefined) {
-      continue
-    }
-
-    if (char === '"') {
-      if (inQuotes && next === '"') {
-        currentValue += '"'
-        index += 1
-      } else {
-        inQuotes = !inQuotes
-      }
-      continue
-    }
-
-    if (char === ',' && !inQuotes) {
-      currentRecord.push(currentValue)
-      currentValue = ''
-      continue
-    }
-
-    if ((char === '\n' || char === '\r') && !inQuotes) {
-      if (char === '\r' && next === '\n') {
-        index += 1
-      }
-      currentRecord.push(currentValue)
-      records.push(currentRecord)
-      currentRecord = []
-      currentValue = ''
-      continue
-    }
-
-    currentValue += char
-  }
-
-  currentRecord.push(currentValue)
-  if (currentRecord.some((value) => value.length > 0)) {
-    records.push(currentRecord)
-  }
-
-  return records
+export function readCsv(csv: string, comment?: string): CsvRecord[] {
+  return parse(csv, {
+    bom: true,
+    info: true,
+    relax_column_count: true,
+    skip_empty_lines: true,
+    ...(comment ? { comment, comment_no_infix: true } : {}),
+  }) as unknown as CsvRecord[]
 }

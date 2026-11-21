@@ -105,3 +105,31 @@ describe('parseSparrowTransactionsCsv', () => {
     expect(result.events).toEqual([])
   })
 })
+
+describe('formats Sparrow actuels', () => {
+  it.each([
+    ['BTC', '"0,00010000"', '"0,00000120"'],
+    ['Sats', '10000', '120'],
+  ])('importe les en-têtes avec unité %s', (unit, value, fee) => {
+    const result = parseSparrowTransactionsCsv(
+      'Date (UTC),Label,Value (' + unit + '),Balance (' + unit + '),Fee (' + unit + '),Value (EUR),Txid\r\n' +
+      '2026-05-23 11:00:00,"Libellé, fictif",' + value + ',' + value + ',' + fee + ',"12,34",fictif\r\n\r\n' +
+      '# Historical EUR values are taken from daily rates.\r\n', context,
+    )
+    expect(result.errors).toEqual([])
+    expect(result.rows).toHaveLength(1)
+    expect(result.events[0]).toMatchObject({ quantitySats: 10_000, fee: { amountSats: 120 }, fiat: { grossAmountCents: 1234 } })
+  })
+
+  it('isole les dates invalides, les lignes de trop et les doublons', () => {
+    const valid = '2026-02-01 12:00:00,Exemple,1000,1000,,fictif'
+    const result = parseSparrowTransactionsCsv([
+      'Date (UTC),Label,Value,Balance,Fee,Txid', valid, valid,
+      '2026-02-30 12:00:00,Exemple,1000,1000,,fictif-invalide',
+      '2026-02-01 12:00:00,Exemple,1000,1000,,fictif-colonne,extra',
+    ].join('\n'), context)
+    expect(result.events.map(event => event.occurredAt)).toEqual(['2026-02-01T12:00:00Z', null])
+    expect(result.rows.map(row => row.parseStatus)).toEqual(['parsed', 'needs_review', 'needs_review', 'error'])
+    expect(result.rows[3]?.fields.at(-1)).toBe('extra')
+  })
+})
