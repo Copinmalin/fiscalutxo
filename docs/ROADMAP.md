@@ -2,7 +2,7 @@
 
 ## 1. Rôle de ce document
 
-Ce document garde le plan d’origine, suit l’avancement étape par étape et indique toujours la prochaine action à traiter.
+Les premières phases ci-dessous décrivent le plan d’origine. La section 9 donne l’état du MVP 2026.
 
 La source de vérité reste courte. Le présent document sert de tableau de bord opérationnel.
 
@@ -231,12 +231,14 @@ fiscalutxo/
 └── samples/
 ```
 
-## 9. Étape en cours
+## 9. État du MVP 2026
 
-**Étape actuelle : Phase 2 — Test réel contrôlé.**
+- Import Sparrow avec unités, CSV générique et bundle JSON de la CLI.
+- Qualification et sauvegarde d’un dossier local versionné.
+- Calcul 2026, détails 2086, report 2042 C et checklist 3916-bis en CSV, JSON et XLSX.
+- Application web locale pour parcourir ces étapes sans terminal après le démarrage.
 
-## 10. Prochaine action unique
+## 10. Vérifications de sortie
 
-Faire tourner la procédure `docs/REMOTE_REAL_TEST.md` avec un export Sparrow configuré avec `Exchange rate source = None`.
-
-Objectif : obtenir un retour réel sur le parseur avant de créer une nouvelle fonctionnalité.
+- Refaire le parcours avec un export produit par Sparrow, gardé en local.
+- Vérifier le millésime officiel 2027 avant de distribuer le pilote pour la campagne déclarative.

@@ -54,22 +54,7 @@ Objectif prioritaire : **sortir une application simple et utilisable rapidement*
 
 Pour un particulier français, la plus ou moins-value n’est pas calculée en FIFO, LIFO ou CUMP simple.
 
-Formule de référence :
-
-```text
-Plus ou moins-value brute =
-Prix de cession
-- [Prix total d’acquisition × Prix de cession / Valeur globale du portefeuille]
-```
-
-L’application doit donc aider à établir :
-
-- prix de cession ;
-- frais ;
-- prix total d’acquisition ;
-- valeur globale du portefeuille fiscal ;
-- fractions déjà consommées ;
-- statut imposable ou non imposable.
+Le moteur applique une fraction de capital au prix d’acquisition restant du portefeuille global. Le prix avant frais intervient dans cette fraction. Le gain est calculé à partir du prix net des frais justifiés. Les règles, dates et sources sont dans [TAX_FR.md](TAX_FR.md).
 
 ## 5. Sources prioritaires
 
@@ -107,18 +92,7 @@ Choix recommandé :
 
 ## 7. État réel du dépôt
 
-Briques validées :
-
-- gouvernance projet ;
-- règles agents IA ;
-- CI GitHub ;
-- TypeScript minimal ;
-- `NormalizedEvent` V0 ;
-- schéma local V0 documenté ;
-- spécification import CSV Sparrow V0 ;
-- parseur Sparrow V0 ;
-- bundle local d’import JSON ;
-- CLI locale Sparrow vers JSON.
+Le MVP 2026 relie les imports Sparrow et CSV générique, le dossier JSON rechargeable, la qualification utilisateur, le calcul fiscal et les exports CSV, JSON et XLSX dans une application web accessible sur la boucle locale.
 
 ## 8. Documents de pilotage
 
@@ -136,6 +110,6 @@ Les détails vivent dans des documents séparés :
 - `docs/AI_RULES.md` : règles détaillées pour agents IA.
 - `docs/TEST_SECURITY_CHECKLIST.md` : checklist tests et sécurité.
 
-## 9. Prochaine action unique
+## 9. Validation avant diffusion
 
-Documenter un scénario de test manuel réel, sans committer de données personnelles, pour lancer la CLI dans VS Code avec un export Sparrow utilisateur.
+Confirmer l’import avec un export Sparrow produit localement pour un jeu de données de test. Rapprocher les sorties de préparation du formulaire 2086 et de la checklist 3916-bis de la campagne 2027 une fois publiés.
