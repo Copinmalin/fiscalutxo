@@ -39,8 +39,8 @@ button:disabled{cursor:default;opacity:.52}
 .records li{padding:.4rem 0;border-top:1px solid var(--line);display:flex;gap:1rem;justify-content:space-between;align-items:center;overflow-wrap:anywhere}
 .table-scroll{max-height:32rem;overflow:auto}
 table{border-collapse:collapse;width:100%;text-align:left;font-size:.9rem}
-th,td{padding:.56rem .5rem;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
-th{position:sticky;top:0;background:#e8efe9;white-space:nowrap}
+th,td{padding:.56rem .5rem;border-bottom:1px solid var(--line);white-space:nowrap}
+th{position:sticky;top:0;background:#e8efe9}
 .account-form{display:grid;grid-template-columns:2fr 5rem 2fr auto;gap:.65rem;align-items:end}
 .account-form button{margin-bottom:.72rem}
 .check{display:flex;align-items:baseline;gap:.5rem;margin:.9rem 0;font-weight:600}

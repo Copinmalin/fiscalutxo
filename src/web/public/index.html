@@ -60,7 +60,7 @@
     <section id="operations" aria-labelledby="operations-title">
       <div class="heading-row"><h2 id="operations-title">Opérations</h2><button type="button" class="secondary" id="add-operation">Ajouter une opération</button></div>
       <p id="operations-empty">Importez un fichier ou ajoutez un achat, une vente ou un paiement.</p>
-      <div class="table-scroll" id="table-scroll" hidden>
+      <div class="table-scroll" id="table-scroll" role="region" aria-label="Tableau des opérations" tabindex="0" hidden>
         <table>
           <thead><tr><th scope="col">Source</th><th scope="col">Label</th><th scope="col">Date UTC</th><th scope="col">Variation en sats</th><th scope="col">Estimation EUR</th><th scope="col">Qualification</th><th scope="col">Action</th></tr></thead>
           <tbody id="operation-list"></tbody>
