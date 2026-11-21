@@ -13,7 +13,7 @@
     <nav aria-label="Dossier"><a href="#imports">Imports</a><a href="#operations">Opérations</a><a href="#resultats">Résultats</a></nav>
     <div class="file-actions">
       <button id="open-button" type="button" class="secondary">Ouvrir</button>
-      <input id="open-file" type="file" accept=".json,application/json" hidden>
+      <input id="open-file" type="file" hidden>
       <button id="save-button" type="button">Enregistrer le dossier</button>
     </div>
   </header>
@@ -32,10 +32,15 @@
           <form id="import-form">
             <label>Format<select name="format"><option value="sparrow">CSV Sparrow</option><option value="generique">CSV générique</option><option value="bundle">Bundle JSON de la CLI</option></select></label>
             <label>Nom du wallet ou de la plateforme<input name="source" maxlength="120" placeholder="Ex. Sparrow épargne" required></label>
-            <label>Fichier<input name="file" type="file" accept=".csv,.json" required></label>
+            <label>Fichier<input name="file" type="file"></label>
+            <details class="paste-import">
+              <summary>Coller le contenu à la place</summary>
+              <label>Contenu du CSV ou du JSON<textarea name="content" rows="5" spellcheck="false" autocapitalize="off"></textarea></label>
+            </details>
             <button>Importer</button>
             <button type="button" class="secondary" id="template">Modèle CSV</button>
           </form>
+          <p id="import-status" class="import-status" role="status"></p>
           <ul id="import-list" class="records"></ul>
         </div>
         <div>
