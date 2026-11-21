@@ -1,3 +1,7 @@
 Date (UTC),Label,Value (sats),Balance (sats),Fee (sats),Value (EUR),Txid
 2025-01-12 12:00:00,Achat : acquisition fictive,1000000,1000000,,1000.00,achat-fictif
 2025-03-12 12:00:00,Vente : cession fictive,-750000,250000,0,-1500.00,vente-fictive
+2025-04-05 09:15:00,Achat : épargne mensuelle,250000,500000,,250.00,epargne-avril-fictive
+2025-07-05 09:20:00,Achat : épargne mensuelle,125000,625000,,150.00,epargne-juillet-fictive
+2025-09-06 10:05:00,Achat : épargne mensuelle,210000,835000,,210.00,epargne-septembre-fictive
+2025-10-18 14:30:00,Paiement : achat de livres,-83500,751500,0,-86.00,paiement-fictif

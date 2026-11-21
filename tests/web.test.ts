@@ -23,15 +23,17 @@ it('calcule et exporte l’exemple statique sans serveur', async () => {
   const demo = demoProject()
   const sample = await readFile(new URL('../samples/sparrow-demo.csv', import.meta.url), 'utf8')
   expect(demo.imports[0]?.sourceText).toBe(sample)
+  expect(demo.imports[0]?.rawRows).toHaveLength(6)
+  expect(Object.keys(demo.operations)).toHaveLength(4)
   expect(await browserRequest('check', await browserRequest('demo'))).toMatchObject({
     result: { year: 2025, ready: false, blockers: [{ message: 'Ligne source à qualifier ou à corriger' },
       { message: 'Ligne source à qualifier ou à corriger' }] },
   })
   const project = qualifyDemo(demo)
   expect(await browserRequest('check', project)).toMatchObject({
-    result: { year: 2025, ready: true, report: { '3AN': 75_000 } },
+    result: { year: 2025, ready: true, remainingSats: 751_500, report: { '3AN': 75_000 } },
   })
-  expect(await browserRequest('demo', 2026)).toMatchObject({ year: 2026, operations: {} })
+  expect(await browserRequest('demo', 2026)).toMatchObject({ year: 2026, imports: [{ import: { rowCount: 6 } }] })
   const report = await browserRequest('export', { project, format: 'xlsx' })
   expect(report).toBeInstanceOf(Blob)
   if (report instanceof Blob) {
@@ -64,7 +66,7 @@ describe('serveur local', () => {
     expect(page.headers.get('cache-control')).toBe('no-store')
     expect(await page.text()).toContain('Dossier Bitcoin')
     expect(await (await fetch(base + '/api/new')).json()).toMatchObject({ year: 2025 })
-    expect(await (await fetch(base + '/api/demo?year=2026')).json()).toMatchObject({ year: 2026, operations: {} })
+    expect(await (await fetch(base + '/api/demo?year=2026')).json()).toMatchObject({ year: 2026, imports: [{ import: { rowCount: 6 } }] })
     expect((await fetch(base + '/api/new?year=2024')).status).toBe(422)
     const request = (path: string, data: object, origin = base) => fetch(base + '/api/' + path, {
       method: 'POST', headers: { origin, 'Content-Type': 'application/json' }, body: JSON.stringify(data),

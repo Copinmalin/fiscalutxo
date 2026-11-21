@@ -1,6 +1,6 @@
 # Samples
 
-[sparrow-demo.csv](sparrow-demo.csv) contient deux opérations fictives de 2025, un achat et une vente. Il permet de tester l’import Sparrow et la qualification pendant la campagne 2026. Le bouton **Essayer avec un exemple** reprend ce scénario.
+[sparrow-demo.csv](sparrow-demo.csv) contient six opérations fictives de 2025 avec un solde cumulé, des achats, une vente et un paiement. Il permet de tester l’import Sparrow et la qualification pendant la campagne 2026. Le bouton **Essayer avec un exemple** reprend ce scénario avec quatre opérations déjà qualifiées. L’achat initial et la vente restent à qualifier.
 
 ## Règles
 

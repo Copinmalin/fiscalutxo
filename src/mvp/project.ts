@@ -128,15 +128,31 @@ export function emptyProject(year: Project['year'] = defaultFiscalYear): Project
 }
 
 export function demoProject(year: Project['year'] = defaultFiscalYear): Project {
-  return ingest({
+  const { project } = ingest({
     project: { ...emptyProject(year), complete: true, accountsReviewed: true },
     format: 'sparrow', name: 'sparrow-demo.csv', source: 'Wallet fictif',
     content: [
       'Date (UTC),Label,Value (sats),Balance (sats),Fee (sats),Value (EUR),Txid',
       year + '-01-12 12:00:00,Achat : acquisition fictive,1000000,1000000,,1000.00,achat-fictif',
       year + '-03-12 12:00:00,Vente : cession fictive,-750000,250000,0,-1500.00,vente-fictive',
+      year + '-04-05 09:15:00,Achat : épargne mensuelle,250000,500000,,250.00,epargne-avril-fictive',
+      year + '-07-05 09:20:00,Achat : épargne mensuelle,125000,625000,,150.00,epargne-juillet-fictive',
+      year + '-09-06 10:05:00,Achat : épargne mensuelle,210000,835000,,210.00,epargne-septembre-fictive',
+      year + '-10-18 14:30:00,Paiement : achat de livres,-83500,751500,0,-86.00,paiement-fictif',
     ].join('\n') + '\n',
-  }).project
+  })
+  // The first purchase and sale stay open for the walkthrough.
+  for (const event of project.imports[0]!.normalizedEvents.slice(2)) {
+    const rowId = event.sourceRef.rawRowId
+    const details = {
+      rowId, date: event.occurredAt!, sats: event.quantitySats,
+      gross: event.fiat!.grossAmountCents!, reference: event.label! + ' (exemple fictif)',
+    }
+    project.operations[rowId] = event.direction === 'in'
+      ? { ...details, type: 'achat' }
+      : { ...details, type: 'paiement', fee: 0, portfolio: 86_000, valuationReference: 'Cours fictif Sparrow' }
+  }
+  return projectSchema.parse(project)
 }
 
 export const importInputSchema = z.object({
