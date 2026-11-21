@@ -4,14 +4,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>FiscalUTXO · Dossier Bitcoin 2026</title>
-  <link rel="stylesheet" href="/style.css">
-  <script type="module" src="/app.js"></script>
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./app.js"></script>
 </head>
 <body>
   <header class="header">
     <div class="brand"><span class="brand-mark" aria-hidden="true">₿</span><span>FiscalUTXO</span></div>
     <nav aria-label="Dossier"><a href="#imports">Imports</a><a href="#operations">Opérations</a><a href="#resultats">Résultats</a></nav>
     <div class="file-actions">
+      <button id="load-demo" type="button" class="secondary">Essayer avec un exemple</button>
       <button id="open-button" type="button" class="secondary">Ouvrir</button>
       <input id="open-file" type="file" hidden>
       <button id="save-button" type="button">Enregistrer le dossier</button>
@@ -21,7 +22,7 @@
   <main id="workspace">
     <div class="intro">
       <div><p class="eyebrow">Année fiscale 2026</p><h1>Dossier Bitcoin</h1></div>
-      <p>Préparez l’annexe 2086 et retrouvez les montants à reporter. Ce dossier est traité sur cet ordinateur.</p>
+      <p>Préparez l’annexe 2086 et retrouvez les montants à reporter. Les fichiers et les calculs restent sur cet appareil.</p>
     </div>
 
     <section id="imports" aria-labelledby="imports-title">

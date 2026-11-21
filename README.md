@@ -2,7 +2,11 @@
 
 FiscalUTXO est une application web locale qui aide un foyer fiscal français à préparer les cessions Bitcoin réalisées en 2026 dans le cadre de la gestion de son patrimoine privé.
 
-## Démarrer
+## Essai dans le navigateur
+
+L’édition statique se construit avec `npm run build:pages`. Elle réutilise le moteur local dans le navigateur. Le bouton **Essayer avec un exemple** charge un dossier fictif et permet de vérifier les résultats et les exports. Les dossiers personnels restent sur l’appareil et peuvent être sauvegardés en JSON.
+
+## Démarrer en local
 
 Avec Node.js 22.12 ou plus récent dans une branche LTS prise en charge :
 

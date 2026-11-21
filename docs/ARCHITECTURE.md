@@ -13,3 +13,8 @@ CSV Sparrow ou générique / bundle CLI
 Le serveur travaille en mémoire. Le navigateur télécharge le dossier `fiscalutxo-project.v1` quand l’utilisateur l’enregistre. Son fichier regroupe le texte des imports CSV, les lignes et leurs événements, l’état d’ouverture, les qualifications et la liste de comptes. Les rapports sont des fichiers distincts. Le dossier s’ouvre localement après validation de son schéma et de ses liens. Aucune copie automatique du dossier n’est écrite par le serveur.
 
 La CLI reste disponible pour l’import Sparrow indépendant. Le schéma [SQLite V0](SQLITE_SCHEMA_V0.md) est un document historique de conception. La syntaxe des imports figure dans [IMPORTS.md](IMPORTS.md).
+
+
+## Édition statique
+
+`npm run build:pages` génère `dist/pages/` pour GitHub Pages. Le build assemble le moteur TypeScript et la même interface. Le transport navigateur traite le dossier, les imports et les exports en mémoire. La politique de sécurité de la page bloque les connexions applicatives sortantes. La version avec Node.js conserve son serveur de boucle locale et ses routes.

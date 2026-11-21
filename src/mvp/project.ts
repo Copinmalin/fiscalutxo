@@ -1,4 +1,5 @@
-import { createHash } from 'node:crypto'
+import { sha256 } from '@noble/hashes/sha2.js'
+import { bytesToHex } from '@noble/hashes/utils.js'
 import { z } from 'zod'
 import { createSparrowImportBundle } from '../imports/import-bundle.js'
 import { parseFixedDecimal, parseSparrowTransactionsCsv, readCsv, type ParsedRawRow } from '../importers/sparrow-transactions-csv.js'
@@ -127,6 +128,25 @@ export function emptyProject(): Project {
   }
 }
 
+export function demoProject(): Project {
+  return {
+    ...emptyProject(), complete: true, accountsReviewed: true,
+    operations: {
+      'manual:demo-acquisition': {
+        type: 'achat', date: '2026-01-12T12:00:00.000Z', sats: 1_000_000, gross: 100_000, reference: 'Achat fictif',
+      },
+      'manual:demo-vente-1': {
+        type: 'vente', date: '2026-03-12T12:00:00.000Z', sats: 375_000, gross: 45_000, fee: 0,
+        portfolio: 120_000, reference: 'Vente fictive de mars', valuationReference: 'Valorisation fictive',
+      },
+      'manual:demo-vente-2': {
+        type: 'vente', date: '2026-08-12T12:00:00.000Z', sats: 625_000, gross: 130_000, fee: 0,
+        portfolio: 130_000, reference: 'Vente fictive d’août', valuationReference: 'Valorisation fictive',
+      },
+    },
+  }
+}
+
 export const importInputSchema = z.object({
   project: projectSchema,
   format: z.enum(['sparrow', 'generique', 'bundle']),
@@ -172,7 +192,7 @@ export function ingest({ project, format, content, name, source }: z.infer<typeo
 }
 
 function digest(text: string) {
-  return createHash('sha256').update(text).digest('hex')
+  return bytesToHex(sha256(new TextEncoder().encode(text)))
 }
 
 const genericHeaders = ['date_utc', 'type', 'sats', 'prix_eur', 'frais_eur', 'portefeuille_eur', 'justificatif', 'valorisation', 'txid']

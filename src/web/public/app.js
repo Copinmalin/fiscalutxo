@@ -1,3 +1,5 @@
+import { request } from './transport.js'
+
 const $ = id => document.getElementById(id)
 const operationForm = $('operation-form')
 const dialog = $('operation-dialog')
@@ -32,17 +34,6 @@ function button(label, callback) {
 function status(text, error = false, target = 'status') {
   $(target).textContent = text
   $(target).classList.toggle('error', error)
-}
-
-async function request(path, data, download = false) {
-  const response = await fetch('/api/' + path, data === undefined ? {} : {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
-  })
-  if (!response.ok) {
-    const result = await response.json()
-    throw new Error([result.error, ...(result.issues ?? [])].join(' · '))
-  }
-  return download ? response.blob() : response.json()
 }
 
 async function task(action, errorTarget) {
@@ -400,6 +391,19 @@ for (const node of document.querySelectorAll('[data-format]')) {
     status('Rapport ' + format.toUpperCase() + ' téléchargé.')
   }))
 }
+
+$('load-demo').addEventListener('click', () => {
+  if (dirty && !confirm('Remplacer le dossier ouvert et ses modifications non enregistrées ?')) return
+  void task(async () => {
+    project = await request('demo')
+    dirty = false
+    ready = false
+    $('result').replaceChildren()
+    renderOpening()
+    render()
+    status('Dossier fictif chargé. Ouvrez les résultats et lancez le contrôle.')
+  })
+})
 
 $('open-button').addEventListener('click', () => {
   if (!busy && (!dirty || confirm('Remplacer le dossier ouvert et ses modifications non enregistrées ?'))) $('open-file').click()
