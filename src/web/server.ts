@@ -3,11 +3,12 @@ import { readFile } from 'node:fs/promises'
 import { z } from 'zod'
 import { calculate } from '../mvp/tax.js'
 import { exportReport } from '../mvp/export.js'
-import { emptyProject, importInputSchema, ingest, projectSchema } from '../mvp/project.js'
+import { demoProject, emptyProject, importInputSchema, ingest, projectSchema } from '../mvp/project.js'
 
 const assets = {
   '/': ['index.html', 'text/html; charset=utf-8'],
   '/app.js': ['app.js', 'text/javascript; charset=utf-8'],
+  '/transport.js': ['transport.js', 'text/javascript; charset=utf-8'],
   '/style.css': ['style.css', 'text/css; charset=utf-8'],
 } as const
 
@@ -37,6 +38,7 @@ export function createLocalServer() {
       return
     }
     if (request.method === 'GET' && path === '/api/new') return json(response, 200, emptyProject())
+    if (request.method === 'GET' && path === '/api/demo') return json(response, 200, demoProject())
     if (request.method !== 'POST' || !['/api/import', '/api/check', '/api/export'].includes(path)) {
       return json(response, 404, { error: 'Route inconnue' })
     }

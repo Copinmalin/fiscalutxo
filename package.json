@@ -12,7 +12,8 @@
     "cli": "node ./dist/src/cli/fiscalutxo.js",
     "lint": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --dir tests",
-    "start": "node dist/src/web/main.js"
+    "start": "node dist/src/web/main.js",
+    "build:pages": "node scripts/build-pages.mjs"
   },
   "keywords": [
     "bitcoin",
@@ -24,10 +25,12 @@
   "license": "UNLICENSED",
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "esbuild": "^0.28.2",
     "typescript": "^5.0.0",
     "vitest": "^5.1.1"
   },
   "dependencies": {
+    "@noble/hashes": "^2.4.0",
     "csv-parse": "^7.0.3",
     "fflate": "^0.8.3",
     "zod": "^4.6.7"

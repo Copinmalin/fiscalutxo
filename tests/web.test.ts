@@ -1,7 +1,21 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { once } from 'node:events'
 import { emptyProject } from '../src/mvp/project.js'
+import { request as browserRequest } from '../src/web/browser-transport.js'
 import { createLocalServer } from '../src/web/server.js'
+
+it('calcule et exporte l’exemple statique sans serveur', async () => {
+  const project = await browserRequest('demo')
+  expect(await browserRequest('check', project)).toMatchObject({
+    result: { ready: true, report: { '3AN': 75_000 } },
+  })
+  const report = await browserRequest('export', { project, format: 'xlsx' })
+  expect(report).toBeInstanceOf(Blob)
+  if (report instanceof Blob) {
+    expect(new Uint8Array(await report.arrayBuffer()).slice(0, 2)).toEqual(new Uint8Array([80, 75]))
+  }
+  await expect(browserRequest('export', { project: emptyProject(), format: 'csv' })).rejects.toThrow('Complétez le dossier')
+})
 
 describe('serveur local', () => {
   const server = createLocalServer()

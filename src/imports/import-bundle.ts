@@ -1,4 +1,5 @@
-import { createHash } from 'node:crypto'
+import { sha256 } from '@noble/hashes/sha2.js'
+import { bytesToHex } from '@noble/hashes/utils.js'
 import type { NormalizedEvent } from '../domain/normalized-event.js'
 import type { ParsedRawRow, SparrowParseResult } from '../importers/sparrow-transactions-csv.js'
 
@@ -150,5 +151,5 @@ function sortJsonValue(value: unknown): unknown {
 }
 
 function buildRowFingerprint(rowNumber: number, rawPayload: Record<string, string>): string {
-  return 'sha256:' + createHash('sha256').update(JSON.stringify([rowNumber, rawPayload])).digest('hex')
+  return 'sha256:' + bytesToHex(sha256(new TextEncoder().encode(JSON.stringify([rowNumber, rawPayload]))))
 }
