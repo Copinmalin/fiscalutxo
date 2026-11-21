@@ -1,5 +1,7 @@
 # Spécification MVP 0.1 — FiscalUTXO
 
+Ce document conserve le contrat historique du socle d’import 0.1. Le parcours du MVP fiscal 2026 est décrit dans le [README](../README.md) et dans [TAX_FR.md](TAX_FR.md).
+
 ## Objectif
 
 Définir précisément la première version utilisable de FiscalUTXO avant d’élargir le périmètre.

@@ -1,91 +1,15 @@
-# Architecture — FiscalUTXO
+# Architecture locale
 
-## Objectif
-
-Construire une application locale simple, évolutive et testable.
-
-La priorité actuelle est de valider le moteur local avant d’ajouter une interface ou une base SQLite exécutable.
-
-## Architecture cible
+L’application conserve les briques TypeScript d’import et utilise un serveur HTTP Node écoutant sur `127.0.0.1`, sur un port libre. Les fichiers HTML, CSS et JavaScript sont servis depuis la même origine. Les routes JSON vérifient le nom d’hôte et l’origine et appliquent une limite de 24 Mio au corps d’une requête.
 
 ```text
-CSV imports
-→ parsing
-→ normalisation
-→ bundle local ou stockage local
-→ qualification utilisateur
-→ moteur fiscal France
-→ exports
+CSV Sparrow ou générique / bundle CLI
+→ lignes sources et événements normalisés
+→ dossier JSON et qualifications explicites
+→ calcul 2026
+→ détails 2086, synthèse 2042 C, checklist 3916-bis
 ```
 
-## Architecture actuelle
+Le serveur travaille en mémoire. Le navigateur télécharge le dossier `fiscalutxo-project.v1` quand l’utilisateur l’enregistre. Son fichier regroupe le texte des imports CSV, les lignes et leurs événements, l’état d’ouverture, les qualifications et la liste de comptes. Les rapports sont des fichiers distincts. Le dossier s’ouvre localement après validation de son schéma et de ses liens. Aucune copie automatique du dossier n’est écrite par le serveur.
 
-```text
-CSV Sparrow local
-→ CLI locale
-→ parseur Sparrow V0
-→ NormalizedEvent
-→ bundle local d’import
-→ JSON stdout ou fichier
-```
-
-## Contraintes
-
-- Local-first.
-- CSV-first.
-- Bitcoin-only.
-- Pas de cloud dans le MVP.
-- Pas de seed, clé privée, mot de passe ou xpub.
-- Pas d’accès réseau nécessaire.
-- Moteur isolé et testable.
-- Base locale évolutive plus tard.
-
-## Stack actuelle
-
-- TypeScript.
-- Node.js pour la CLI locale.
-- Vitest pour les tests.
-- GitHub Actions pour la CI.
-
-## Stack cible future
-
-- Web app locale.
-- SQLite ou stockage local équivalent.
-- Tauri plus tard si besoin desktop.
-- Exports XLSX / CSV / JSON / PDF.
-
-## Contrats de données
-
-- [`docs/NORMALIZED_EVENT.md`](NORMALIZED_EVENT.md) : format canonique des événements normalisés.
-- [`docs/SQLITE_SCHEMA_V0.md`](SQLITE_SCHEMA_V0.md) : schéma local V0 pour sources, imports, lignes brutes, événements normalisés, classifications, préparations fiscales et audit.
-- [`docs/importers/SPARROW_CSV_V0.md`](importers/SPARROW_CSV_V0.md) : contrat d’import CSV Sparrow.
-- [`docs/CLI.md`](CLI.md) : usage de la CLI locale.
-
-## Frontières actuelles
-
-Ce qui existe :
-
-- types `NormalizedEvent` ;
-- validation minimale ;
-- parseur CSV Sparrow V0 ;
-- bundle JSON local ;
-- CLI locale ;
-- tests unitaires et CI.
-
-Ce qui n’existe pas encore :
-
-- SQLite exécutable ;
-- interface utilisateur ;
-- moteur fiscal 2086 ;
-- export XLSX ;
-- imports plateformes ;
-- qualification utilisateur persistée.
-
-## À décider plus tard
-
-- Framework UI.
-- Solution exacte de base locale.
-- Stratégie de migrations exécutables.
-- Librairie d’export XLSX.
-- Format de sauvegarde JSON définitif.
-- Stratégie d’anonymisation pour jeux de démo.
+La CLI reste disponible pour l’import Sparrow indépendant. Le schéma [SQLite V0](SQLITE_SCHEMA_V0.md) est un document historique de conception. La syntaxe des imports figure dans [IMPORTS.md](IMPORTS.md).

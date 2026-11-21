@@ -1,57 +1,25 @@
 # FiscalUTXO
 
-FiscalUTXO est un dépôt de travail pour concevoir et développer une application locale Bitcoin-only destinée à aider un particulier résident fiscal français à préparer sa déclaration fiscale liée à ses transactions Bitcoin.
+FiscalUTXO est une application web locale qui aide un foyer fiscal français à préparer les cessions Bitcoin réalisées en 2026 dans le cadre de la gestion de son patrimoine privé.
 
-Le dépôt sert à centraliser :
+## Démarrer
 
-- le cadrage produit ;
-- les règles de scope ;
-- la documentation fiscale et technique ;
-- les spécifications fonctionnelles ;
-- les instructions de travail pour Codex et les agents IA ;
-- les règles de tests et de sécurité ;
-- le socle TypeScript du moteur d’import ;
-- les futurs fichiers source de l’application.
+Avec Node.js 22.12 ou plus récent dans une branche LTS prise en charge :
 
-## Objectif du projet
-
-FiscalUTXO vise à fournir un outil local-first capable de :
-
-- importer des historiques CSV issus de plateformes ou wallets Bitcoin ;
-- conserver les données brutes importées ;
-- normaliser les opérations dans un format interne commun ;
-- accompagner la qualification fiscale des transactions ;
-- préparer les éléments utiles aux déclarations françaises liées aux actifs numériques ;
-- produire des exports exploitables par l’utilisateur.
-
-Le projet est volontairement limité au périmètre suivant :
-
-- France ;
-- particulier résident fiscal français ;
-- Bitcoin uniquement ;
-- usage patrimonial privé ;
-- imports CSV ;
-- fonctionnement local-first ;
-- préparation déclarative, sans déclaration automatique.
-
-## État technique actuel
-
-Le dépôt contient déjà un flux local minimal :
-
-```text
-CSV Sparrow local
-→ CLI locale
-→ parseur Sparrow V0
-→ NormalizedEvent
-→ bundle local d’import
-→ JSON stdout ou fichier
+```bash
+npm ci
+npm run build
+npm start
 ```
 
-La CLI est documentée dans [`docs/CLI.md`](docs/CLI.md).
+Ouvrir dans le navigateur l’adresse `http://127.0.0.1:…` affichée dans le terminal. Une fois les dépendances installées, l’application fonctionne hors ligne.
 
-Le scénario de test manuel avec un export Sparrow local est documenté dans [`docs/MANUAL_REAL_TEST.md`](docs/MANUAL_REAL_TEST.md).
+1. Importer un CSV Sparrow, un CSV générique ou un bundle de la CLI. Utiliser un nom stable par wallet ou plateforme pour rapprocher les imports successifs.
+2. Confirmer l’état du portefeuille au 1er janvier 2026, puis qualifier les achats, ventes, paiements et transferts. Les montants EUR indicatifs de Sparrow servent à la revue. Les montants fiscaux proviennent de justificatifs renseignés par l’utilisateur.
+3. Renseigner les comptes concernés, confirmer la couverture du dossier et lancer le contrôle. Corriger les écarts affichés avant d’exporter le détail 2086, le résumé 2042 C et la checklist 3916-bis.
+4. Cliquer sur **Enregistrer le dossier** pour télécharger le JSON rechargeable. Le conserver dans un dossier privé hors du dépôt. Le bouton **Ouvrir** restaure les imports et les qualifications.
 
-Le scénario de test distant sécurisé est documenté dans [`docs/REMOTE_REAL_TEST.md`](docs/REMOTE_REAL_TEST.md).
+La préparation cible les revenus 2026. Les exports restent des supports de travail jusqu’à vérification des formulaires officiels de la campagne 2027. L’application calcule la plus ou moins-value patrimoniale. Elle laisse le choix du barème au déclarant.
 
 ## Structure du dépôt
 
@@ -66,6 +34,8 @@ fiscalutxo/
 │   ├── domain/
 │   ├── importers/
 │   ├── imports/
+│   ├── mvp/
+│   ├── web/
 │   └── index.ts
 ├── tests/
 ├── docs/
@@ -121,7 +91,7 @@ fiscalutxo/
 ## Commandes techniques
 
 ```bash
-npm install
+npm ci
 npm run lint
 npm run test
 npm run build
@@ -131,11 +101,11 @@ Utiliser la CLI après compilation :
 
 ```bash
 npm run build
-npm run cli -- sparrow ./transactions.csv
+npm run cli -- sparrow ~/dossier-prive/transactions.csv
 ```
 
 ## Avertissement
 
 FiscalUTXO est un outil d’aide à la préparation. Il ne remplace pas un conseil fiscal, un expert-comptable ou l’administration fiscale.
 
-Les CSV et JSON produits peuvent contenir des données patrimoniales sensibles. Ils ne doivent pas être committés dans le dépôt.
+Les CSV, JSON et XLSX produits peuvent contenir des données patrimoniales sensibles. Ils ne doivent pas être committés dans le dépôt.
