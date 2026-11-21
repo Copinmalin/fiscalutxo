@@ -271,7 +271,7 @@ function updateOperationFields(selectedPeer) {
     ...candidates.map(item => {
       const quantity = item.event?.quantitySats
       const sats = quantity === undefined ? 'Sats indisponibles' : movementSats(quantity, item.event.direction) + ' sats'
-      const parts = [importedLabel(item) || 'Sans label', sats, item.title]
+      const parts = ['Ligne ' + item.row.rowNumber, item.bundle.source.name, importedLabel(item) || 'Sans label', sats]
       if (linked(item)) parts.push('même txid')
       return new Option(parts.join(' · '), item.id)
     }))
