@@ -556,38 +556,37 @@ function renderAccounts() {
   const accountsBySource = new Map(project.accounts.filter(account => account.sourceId)
     .map(account => [account.sourceId, account]))
   const visibleSources = project.sources.filter(source => source.kind === 'platform' && accountsBySource.get(source.id)?.country !== 'FR')
-  const sourceItems = visibleSources.map(source => {
-    const account = accountsBySource.get(source.id)
-    const item = element('li')
-    const description = element('div')
-    description.append(element('strong', source.name))
-    let details
-    if (!account) details = ['Plateforme', 'Pays de l’entité à renseigner']
-    else {
-      const entity = account.entity === source.name ? null : account.entity
-      const reporting = !account.relevant ? 'Hors 3916-bis' :
-        account.reference ? 'À déclarer' : 'Référence du compte à renseigner'
-      details = ['Plateforme', entity, account.country, reporting, account.reference]
+  function accountRow(account, source) {
+    const row = element('li')
+    for (const [title, value] of [
+      ['Entité', account?.entity ?? source?.name],
+      ['Pays', account?.country],
+      ['Référence du compte', account?.reference],
+    ]) {
+      const label = element('label', title)
+      const input = element('input')
+      input.readOnly = true
+      input.value = value ?? ''
+      input.placeholder = source && !value ? 'À préciser' : ''
+      label.append(input)
+      row.append(label)
     }
-    description.append(element('div', details.filter(Boolean).join(' · '), 'account-detail'))
-    item.append(description)
-    addCerfaButton(item, account)
-    return item
-  })
+    addCerfaButton(row, account)
+    return row
+  }
+  const sourceItems = visibleSources.map(source => accountRow(accountsBySource.get(source.id), source))
   const legacyItems = project.accounts.filter(account => !account.sourceId && account.country !== 'FR').map(account => {
-    const reporting = !account.relevant ? 'Hors 3916-bis' : 'À déclarer'
-    const item = element('li')
-    item.append(element('span', [account.entity, account.country, reporting, account.reference].filter(Boolean).join(' · ')),
-      button('Retirer', () => {
-        project.accounts = project.accounts.filter(value => value !== account)
-        project.accountsReviewed = false
-        changed('Compte retiré du dossier ouvert.')
-      }))
-    addCerfaButton(item, account)
-    return item
+    const row = accountRow(account)
+    row.append(button('Retirer', () => {
+      project.accounts = project.accounts.filter(value => value !== account)
+      project.accountsReviewed = false
+      changed('Compte retiré du dossier ouvert.')
+    }))
+    return row
   })
   $('account-empty').hidden = sourceItems.length + legacyItems.length > 0
-  $('account-list').replaceChildren(...sourceItems, ...legacyItems)
+  const items = [...sourceItems, ...legacyItems]
+  $('account-list').replaceChildren(...(items.length ? items : [accountRow()]))
 }
 
 function render(blockedRows = new Set()) {
