@@ -345,7 +345,7 @@ function renderSources() {
     const confirmation = element('label', undefined, 'check')
     confirmation.append(coverage, element('span', 'J’ai recensé tous les mouvements de cette source entre le solde de référence, le début de l’année et la dernière cession à traiter.'))
     form.append(confirmation)
-    const currentAccount = project.accounts.find(account => account.sourceId === source.id)
+    let currentAccount = project.accounts.find(account => account.sourceId === source.id)
     const oldAccounts = project.accounts.filter(account => !account.sourceId)
     let legacyAccount
     if (source.kind === 'platform') {
@@ -372,6 +372,45 @@ function renderSources() {
         form.elements.accountReference.value = account?.reference ?? ''
       })
     }
+    function saveAccount() {
+      if (source.kind !== 'platform') return
+      const fields = form.elements
+      const country = fields.country.value.trim().toUpperCase()
+      const entity = fields.entity.value.trim() || source.name
+      const accountReference = fields.accountReference.value.trim()
+      if (!country && (accountReference || legacyAccount?.value)) throw new Error('Renseignez le pays de l’entité.')
+      const previous = currentAccount ?? (legacyAccount?.value ? oldAccounts[Number(legacyAccount.value)] :
+        oldAccounts.find(account => account.entity === entity && account.country === country &&
+          account.reference === accountReference))
+      if (country && !/^[A-Z]{2}$/.test(country)) throw new Error('Utilisez un code pays de deux lettres.')
+      if (country) {
+        const next = { sourceId: source.id, entity, country, reference: accountReference, relevant: previous?.relevant ?? true }
+        const updated = !previous || Object.keys(next).some(key => next[key] !== previous[key])
+        if (previous) Object.assign(previous, next)
+        else project.accounts.push(next)
+        currentAccount = previous ?? next
+        if (legacyAccount) legacyAccount.disabled = true
+        if (updated) project.accountsReviewed = false
+        return updated
+      } else if (currentAccount) {
+        project.accounts = project.accounts.filter(account => account !== currentAccount)
+        currentAccount = undefined
+        project.accountsReviewed = false
+        return true
+      }
+    }
+    form.addEventListener('change', event => {
+      if (!['country', 'entity', 'accountReference'].includes(event.target.name) && event.target !== legacyAccount) return
+      if (!form.elements.country.value || !form.elements.country.validity.valid) return
+      if (saveAccount()) {
+        dirty = true
+        ready = false
+        $('result').replaceChildren()
+        for (const node of document.querySelectorAll('[data-format]')) node.disabled = true
+        $('accounts-reviewed').checked = false
+        renderAccounts()
+      }
+    })
     const save = element('button', 'Valider cette source')
     form.append(save)
     const linked = count || Object.values(project.operations).some(operation => operation.sourceId === source.id)
@@ -395,26 +434,7 @@ function renderSources() {
           if (!reference || !fields.anchorDate.value) throw new Error('Indiquez la date et le justificatif du solde.')
           anchor = { date: new Date(fields.anchorDate.value + 'Z').toISOString(), sats: parseSats(sats.value), reference }
         }
-        if (source.kind === 'platform') {
-          const country = fields.country.value.trim().toUpperCase()
-          const entity = fields.entity.value.trim() || source.name
-          const accountReference = fields.accountReference.value.trim()
-          if (!country && (accountReference || legacyAccount?.value)) throw new Error('Renseignez le pays de l’entité.')
-          const previous = currentAccount ?? (legacyAccount?.value ? oldAccounts[Number(legacyAccount.value)] :
-            oldAccounts.find(account => account.entity === entity && account.country === country &&
-              account.reference === accountReference))
-          if (country && !/^[A-Z]{2}$/.test(country)) throw new Error('Utilisez un code pays de deux lettres.')
-          if (country) {
-            const next = { sourceId: source.id, entity, country, reference: accountReference, relevant: previous?.relevant ?? true }
-            const updated = !previous || Object.keys(next).some(key => next[key] !== previous[key])
-            if (previous) Object.assign(previous, next)
-            else project.accounts.push(next)
-            if (updated) project.accountsReviewed = false
-          } else if (currentAccount) {
-            project.accounts = project.accounts.filter(account => account !== currentAccount)
-            project.accountsReviewed = false
-          }
-        }
+        saveAccount()
         if (anchor) source.anchor = anchor
         else delete source.anchor
         source.coverage = coverage.checked
