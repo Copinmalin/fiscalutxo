@@ -501,16 +501,14 @@ function renderSources() {
 function renderAccounts() {
   const accountsBySource = new Map(project.accounts.filter(account => account.sourceId)
     .map(account => [account.sourceId, account]))
-  const visibleSources = project.sources.filter(source => accountsBySource.get(source.id)?.country !== 'FR')
+  const visibleSources = project.sources.filter(source => source.kind === 'platform' && accountsBySource.get(source.id)?.country !== 'FR')
   const sourceItems = visibleSources.map(source => {
     const account = accountsBySource.get(source.id)
-    const wallet = source.kind === 'wallet'
     const item = element('li')
     const description = element('div')
     description.append(element('strong', source.name))
     let details
-    if (wallet) details = ['Wallet en autoconservation', 'Hors 3916-bis']
-    else if (!account) details = ['Plateforme', 'Pays de l’entité à renseigner']
+    if (!account) details = ['Plateforme', 'Pays de l’entité à renseigner']
     else {
       const entity = account.entity === source.name ? null : account.entity
       const reporting = !account.relevant ? 'Hors 3916-bis' :
