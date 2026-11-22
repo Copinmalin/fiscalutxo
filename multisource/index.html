@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>fiscalutxomulti</title>
   <link rel="stylesheet" href="./style.css">
-  <script type="module" src="./app.js?v=5a4bc9c6f379"></script>
+  <script type="module" src="./app.js?v=31edb1e3d6b1"></script>
 </head>
 <body>
   <header class="header">
@@ -76,7 +76,7 @@
       <h2 id="opening-title">3. Situation à l’ouverture</h2>
       <p id="opening-breakdown" hidden></p>
       <form id="opening-form">
-        <label>Solde de tout le foyer en sats<input name="sats" type="number" min="0" step="1" required></label>
+        <label>Solde de tout le foyer en sats<input name="sats" inputmode="numeric" pattern="[0-9 ]+" required></label>
         <label>Prix d’acquisition cumulés en €<input name="acquisitions" inputmode="decimal" required></label>
         <label>Capital déjà consommé en €<input name="used" inputmode="decimal" required></label>
         <label>Justificatif ou référence<input name="reference" maxlength="500" required></label>
@@ -114,7 +114,7 @@
           <label>Qualification<select name="type" required></select></label>
           <div class="input-grid">
             <label data-field="date">Date et heure UTC<input name="date" type="datetime-local" step="1"></label>
-            <label data-field="sats">Quantité réelle en sats<input name="sats" type="number" min="1" step="1"></label>
+            <label data-field="sats">Quantité réelle en sats<input name="sats" inputmode="numeric" pattern="[0-9 ]*[1-9][0-9 ]*"></label>
             <div id="gross-field">
               <label data-field="gross" id="gross-label"><span>Prix en €</span><input name="gross" inputmode="decimal"><small id="acquisition-estimate-note" hidden>Estimation EUR importée à vérifier avec le justificatif.</small></label>
               <div id="disposal-estimate" hidden>
@@ -134,7 +134,7 @@
             </label>
             <div id="portfolio-estimate-controls" hidden>
               <label id="other-holdings-label">Autres avoirs Bitcoin du foyer à cette date, en sats
-                <input id="other-holdings" inputmode="numeric" maxlength="16" placeholder="0 si aucun" aria-describedby="portfolio-estimate-help">
+                <input id="other-holdings" inputmode="numeric" maxlength="21" placeholder="0 si aucun" aria-describedby="portfolio-estimate-help">
               </label>
               <p id="portfolio-estimate-help"><small>Vérifiez que le total couvre tous les wallets et plateformes du foyer. Renseignez le justificatif de la valorisation séparément.</small></p>
               <button id="apply-portfolio-estimate" type="button" class="secondary" disabled>Reprendre l’estimation</button>
