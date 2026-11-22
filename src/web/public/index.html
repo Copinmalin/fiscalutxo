@@ -150,6 +150,46 @@
       <p>Ce cadre liste les plateformes étrangères et celles dont le pays reste à préciser. Les informations des comptes se renseignent dans les fiches plateformes.</p>
       <p id="account-empty" hidden>Aucun compte à afficher dans ce récapitulatif.</p>
       <ul id="account-list" class="records"></ul>
+      <dialog id="cerfa-dialog" aria-labelledby="cerfa-title"><form id="cerfa-form">
+      <div class="heading-row"><h3 id="cerfa-title">Préparer le 3916-bis · 2026</h3><button type="button" id="cerfa-cancel" class="secondary">Fermer</button></div>
+      <p id="cerfa-account"></p>
+      <h4>Déclarant</h4>
+      <label>Nom de naissance, nom d’usage et prénoms<input name="name" type="text" maxlength="200" required ></label>
+      <label>Date de naissance<input name="birth" type="date" maxlength="200" required ></label>
+      <label>Lieu de naissance<input name="birthplace" type="text" maxlength="200" required ></label>
+      <label>Adresse au 1er janvier (rue, ville et pays)<input name="address" type="text" maxlength="200" required ></label>
+      <h4>Compte en 2025</h4>
+      <label>Numéro du compte ou e-mail utilisé à l’ouverture<input name="reference" type="text" maxlength="200" required ></label>
+      <label>Date d’ouverture<input name="opened" type="date" maxlength="200" required max="2025-12-31"></label>
+      <label>Date de clôture si le compte a été clos en 2025<input name="closed" type="date" maxlength="200"  min="2025-01-01" max="2025-12-31"></label>
+      <label>Organisme gestionnaire dans la liste officielle<select name="provider" required><option value="">Choisir…</option><option value="other">Autre organisme</option><option value="001">001 · Binance</option><option value="002">002 · Bitfinex</option><option value="003">003 · Bitflyer</option><option value="004">004 · Bithumb</option><option value="005">005 · Bitpanda</option><option value="006">006 · Bitstamp</option><option value="007">007 · Bittrex</option><option value="008">008 · Bybit</option><option value="009">009 · Coinbase Exchange</option><option value="010">010 · Coinceck</option><option value="011">011 · Coinone</option><option value="012">012 · Crypto.com</option><option value="013">013 · eToro</option><option value="014">014 · Foris DAX MT</option><option value="015">015 · FTX</option><option value="016">016 · Gate.io</option><option value="017">017 · Gemini</option><option value="018">018 · Huobi Global</option><option value="019">019 · Korbit</option><option value="020">020 · Kraken</option><option value="021">021 · KuCoin</option><option value="022">022 · LBank</option><option value="023">023 · LiteBit</option><option value="024">024 · MEXC</option><option value="025">025 · OKX</option><option value="026">026 · Phemex</option><option value="027">027 · Poloniex</option><option value="028">028 · SwissBorg Solution</option><option value="029">029 · Trade Republic</option><option value="030">030 · XT.com</option></select></label>
+      <div data-cerfa="other">
+      <label>Nom de l’organisme<input name="entity" type="text" maxlength="200" required ></label>
+      <label>Adresse postale de l’organisme (rue et ville)<input name="providerAddress" type="text" maxlength="200" required ></label>
+      <label>Site internet, le cas échéant<input name="url" type="url" maxlength="200"  ></label>
+      </div>
+      <label>Détention du compte<select name="role" required><option value="">Choisir…</option><option value="owner">Titulaire en propre</option><option value="proxy-person">Procuration — titulaire personne physique</option><option value="proxy-company">Procuration — titulaire personne morale</option></select></label>
+      <div data-cerfa="proxy">
+      <label>Nom du titulaire ou raison sociale<input name="holder" type="text" maxlength="200" required ></label>
+      <label>Adresse du titulaire (rue, ville et pays)<input name="holderAddress" type="text" maxlength="200" required ></label>
+      </div><div data-cerfa="proxy-person">
+      <label>Prénoms du titulaire<input name="holderFirst" type="text" maxlength="200" required ></label>
+      <label>Date de naissance du titulaire<input name="holderBirth" type="date" maxlength="200" required ></label>
+      <label>Lieu de naissance du titulaire<input name="holderBirthplace" type="text" maxlength="200" required ></label>
+      </div><div data-cerfa="proxy-company">
+      <label>Forme juridique du titulaire<input name="holderForm" type="text" maxlength="200" required ></label>
+      <label>SIRET du titulaire si activité en France<input name="holderSiret" type="text" maxlength="200"  ></label>
+      </div>
+      <label>Usage du compte<select name="usage" required><option value="">Choisir…</option><option value="personal">Personnel exclusivement</option><option value="professional">Professionnel exclusivement</option><option value="mixed">Mixte personnel et professionnel</option></select></label>
+      <div data-cerfa="business">
+      <label>Désignation de l’entreprise<input name="business" type="text" maxlength="200" required ></label>
+      <label>Code de forme juridique (01 à 10)<input name="legalForm" type="text" maxlength="200" required pattern="0[1-9]|10"></label>
+      <label>Numéro SIRET<input name="siret" type="text" maxlength="200" required pattern="[0-9]{14}"></label>
+      <label>Adresse du lieu d’activité (rue, ville et pays)<input name="office" type="text" maxlength="200" required ></label>
+      </div>
+      <p>Les renseignements complémentaires restent dans cet onglet. Conservez le PDF téléchargé.</p>
+      <p id="cerfa-error" role="alert"></p><button>Télécharger le CERFA à imprimer</button>
+      </form></dialog>
       <label class="check"><input type="checkbox" id="accounts-reviewed"> <span id="accounts-year"></span></label>
     </section>
 

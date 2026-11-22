@@ -498,6 +498,60 @@ function renderSources() {
     : 'Total reconstitué sur ' + sources.length + ' source(s). Renseignez séparément le capital d’acquisition.'
 }
 
+const cerfaForm = $('cerfa-form')
+let cerfaAccount
+let declarant = {}
+let accountDrafts = new Map()
+
+function updateCerfaSections() {
+  const { role, provider, usage } = cerfaForm.elements
+  const sections = {
+    other: provider.value === 'other', proxy: role.value.startsWith('proxy-'),
+    'proxy-person': role.value === 'proxy-person', 'proxy-company': role.value === 'proxy-company',
+    business: ['professional', 'mixed'].includes(usage.value),
+  }
+  for (const section of cerfaForm.querySelectorAll('[data-cerfa]')) {
+    section.hidden = !sections[section.dataset.cerfa]
+    for (const field of section.querySelectorAll('input')) field.disabled = section.hidden
+  }
+}
+
+function addCerfaButton(item, account) {
+  if (project.year !== 2025 || !account?.relevant || account.country === 'FR') return
+  item.append(button('Préparer le 3916-bis', () => {
+    cerfaAccount = account
+    cerfaForm.reset()
+    const draft = accountDrafts.get(account.sourceId ?? account) ?? {}
+    const values = { ...declarant, ...draft, reference: account.reference || draft.reference || '', entity: account.entity }
+    for (const [key, value] of Object.entries(values)) cerfaForm.elements.namedItem(key).value = value
+    $('cerfa-account').textContent = account.entity + ' · ' + account.country
+    $('cerfa-error').textContent = ''
+    updateCerfaSections()
+    $('cerfa-dialog').showModal()
+  }))
+}
+cerfaForm.addEventListener('change', updateCerfaSections)
+$('cerfa-cancel').addEventListener('click', () => $('cerfa-dialog').close())
+cerfaForm.addEventListener('submit', async event => {
+  event.preventDefault()
+  const account = cerfaAccount
+  const values = Object.fromEntries(new FormData(cerfaForm))
+  const submit = event.submitter
+  submit.disabled = true
+  try {
+    const blob = await request('3916', { ...values, entity: values.entity || account.entity, country: account.country, year: project.year }, true)
+    download(blob, '3916-bis-2026-' + account.entity.replace(/[^a-z0-9à-ÿ-]/gi, '_') + '.pdf')
+    const { name, birth, birthplace, address, ...details } = values
+    declarant = { name, birth, birthplace, address }
+    accountDrafts.set(account.sourceId ?? account, details)
+    $('cerfa-dialog').close()
+  } catch (error) {
+    $('cerfa-error').textContent = error.message
+  } finally {
+    submit.disabled = false
+  }
+})
+
 function renderAccounts() {
   const accountsBySource = new Map(project.accounts.filter(account => account.sourceId)
     .map(account => [account.sourceId, account]))
@@ -517,6 +571,7 @@ function renderAccounts() {
     }
     description.append(element('div', details.filter(Boolean).join(' · '), 'account-detail'))
     item.append(description)
+    addCerfaButton(item, account)
     return item
   })
   const legacyItems = project.accounts.filter(account => !account.sourceId && account.country !== 'FR').map(account => {
@@ -528,6 +583,7 @@ function renderAccounts() {
         project.accountsReviewed = false
         changed('Compte retiré du dossier ouvert.')
       }))
+    addCerfaButton(item, account)
     return item
   })
   $('account-empty').hidden = sourceItems.length + legacyItems.length > 0
@@ -614,6 +670,9 @@ function render(blockedRows = new Set()) {
 }
 
 function renderOpening() {
+  declarant = {}
+  accountDrafts.clear()
+  cerfaForm.reset()
   const fields = $('opening-form').elements
   fields.sats.value = grouped(project.opening.sats)
   fields.acquisitions.value = grouped((project.opening.acquisitions / 100).toFixed(2))

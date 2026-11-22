@@ -10,6 +10,7 @@ await build({
   entryPoints: [source + '/app.js'],
   outfile: output + '/app.js',
   bundle: true,
+  loader: { '.pdf': 'binary' },
   platform: 'browser',
   alias: { 'csv-parse/sync': 'csv-parse/browser/esm/sync' },
   target: 'es2022',
