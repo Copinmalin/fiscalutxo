@@ -490,13 +490,28 @@ function renderSources() {
   $('platform-list').replaceChildren(...cards.filter(card => card.kind === 'platform').map(card => card.group))
   $('wallet-list').replaceChildren(...cards.filter(card => card.kind === 'wallet').map(card => card.group))
   const fields = $('opening-form').elements
-  fields.sats.readOnly = !!opening
-  if (opening) fields.sats.value = opening.sats ?? ''
   const breakdown = $('opening-breakdown')
   breakdown.hidden = !opening
-  if (opening) breakdown.textContent = opening.sats === null
-    ? 'Confirmez les sources et les soldes de référence pour obtenir le total d’ouverture.'
-    : 'Total reconstitué : ' + opening.sats.toLocaleString('fr-FR') + ' sats. Renseignez séparément le capital d’acquisition.'
+  $('opening-form').querySelector('button').disabled = !!opening && opening.sats === null
+  if (!opening) {
+    if (fields.sats.readOnly) fields.sats.value = project.opening.sats
+    fields.sats.readOnly = false
+    fields.sats.type = 'number'
+    return
+  }
+  fields.sats.readOnly = true
+  fields.sats.type = 'text'
+  // A dated opening statement can contribute to the preview before coverage is confirmed.
+  const balances = opening.accounts.map((account, index) => {
+    const anchor = sources[index].anchor
+    return account.sats ?? (anchor && Date.parse(anchor.date) === Date.parse(start) ? anchor.sats : null)
+  }).filter(value => value !== null)
+  const subtotal = balances.reduce((sum, value) => sum + BigInt(value), 0n)
+  fields.sats.value = balances.length ? subtotal.toLocaleString('fr-FR') : ''
+  breakdown.textContent = opening.sats === null
+    ? 'Total provisoire · ' + balances.length + ' source(s) chiffrée(s) sur ' + sources.length +
+      '. Vérifiez les soldes et confirmez la couverture des historiques avant de valider.'
+    : 'Total reconstitué sur ' + sources.length + ' source(s). Renseignez séparément le capital d’acquisition.'
 }
 
 function renderAccounts() {
@@ -784,7 +799,7 @@ $('opening-form').addEventListener('submit', event => {
     const acquisitions = parseEuros(data.get('acquisitions'))
     const used = parseEuros(data.get('used'))
     if (used > acquisitions) throw new Error('Le capital consommé doit rester inférieur ou égal aux acquisitions.')
-    const sats = parseSats(data.get('sats'))
+    const sats = parseSats(data.get('sats').replace(/[   ]/g, ''))
     if (!sats && acquisitions !== used) throw new Error('Un solde nul doit avoir un capital restant nul.')
     const reference = data.get('reference').trim()
     if (!reference) throw new Error('Ajoutez un justificatif.')
