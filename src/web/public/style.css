@@ -105,3 +105,13 @@ dialog .input-grid{gap:0 1rem}
 @media(max-width:580px){.source-form{grid-template-columns:1fr}}
 
 .account-detail{margin-top:.15rem;color:var(--muted);font-size:.87rem}
+
+.validation-attempted :is(input,select,textarea):invalid {
+  border: 2px solid var(--error);
+  background-color: #fff4ef;
+}
+.validation-attempted label:has(:invalid)::after {
+  content: "À compléter ou à corriger";
+  color: var(--error);
+  font-size: .82rem;
+}

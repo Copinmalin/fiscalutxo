@@ -31,6 +31,12 @@ let appliedPortfolioEstimate = ''
 let appliedDisposalEstimate = ''
 let ready = false
 
+// Native validation visits each invalid control before the browser focuses the first one.
+document.addEventListener('invalid', event => {
+  event.target.form?.classList.add('validation-attempted')
+}, true)
+document.addEventListener('reset', event => event.target.classList.remove('validation-attempted'))
+
 function element(tag, text, className) {
   const node = document.createElement(tag)
   if (text !== undefined) node.textContent = text
@@ -411,6 +417,18 @@ function renderSources() {
         renderAccounts()
       }
     })
+    function updateRequirements() {
+      const fields = form.elements
+      fields.anchorDate.required = fields.anchorReference.required = sats.value !== ''
+      if (source.kind === 'platform') {
+        fields.country.required = true
+        const country = fields.country.value.trim().toUpperCase()
+        fields.accountReference.required = /^[A-Z]{2}$/.test(country) && country !== 'FR' && currentAccount?.relevant !== false
+      }
+    }
+    updateRequirements()
+    form.addEventListener('input', updateRequirements)
+    form.addEventListener('change', updateRequirements)
     const save = element('button', 'Valider cette source')
     form.append(save)
     const linked = count || Object.values(project.operations).some(operation => operation.sourceId === source.id)
@@ -752,6 +770,14 @@ $('opening-form').addEventListener('submit', event => {
     status(error.message, true)
   }
 })
+
+const importFields = $('import-form').elements
+function updateImportRequirement() {
+  importFields.file.required = !importFields.content.value.trim()
+}
+updateImportRequirement()
+importFields.content.addEventListener('input', updateImportRequirement)
+$('import-form').addEventListener('reset', () => queueMicrotask(updateImportRequirement))
 
 $('import-form').addEventListener('submit', event => {
   event.preventDefault()
