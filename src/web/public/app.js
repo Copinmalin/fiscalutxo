@@ -137,11 +137,11 @@ function importedDisposalRate(entry, date) {
 function updateDisposalEstimate() {
   const fields = operationForm.elements
   const rate = grossKind(fields.type.value) === 'cession' && importedDisposalRate(selection, fields.date.value)
-  const sats = fields.sats.value
+  const sats = ungroup(fields.sats.value)
   const amount = rate && /^\d{1,16}$/.test(sats) && BigInt(sats) <= 2_100_000_000_000_000n
     ? rate(BigInt(sats)) : 0n
   const estimate = amount > 0n && amount <= 100_000_000_000_000n
-    ? (Number(amount) / 100).toFixed(2).replace('.', ',') : ''
+    ? grouped((Number(amount) / 100).toFixed(2)) : ''
   const button = $('apply-disposal-estimate')
   $('disposal-estimate').hidden = !estimate
   if (estimate) button.textContent = 'Reprendre ' + money(Number(amount))
@@ -188,7 +188,7 @@ function updatePortfolioEstimate() {
 
   message.textContent = 'Wallet importé avant cession : ' + walletSats.toLocaleString('fr-FR') +
     ' sats, soit environ ' + money(Number(estimate(walletSats))) + ' au cours journalier Sparrow.'
-  const other = $('other-holdings').value.trim()
+  const other = ungroup($('other-holdings').value.trim())
   if (!/^\d{1,16}$/.test(other)) return null
   const totalSats = walletSats + BigInt(other)
   if (totalSats > 2_100_000_000_000_000n) return null
@@ -343,20 +343,6 @@ function renderSources() {
       source.anchor?.sats.toLocaleString('fr-FR').replace(/ /g, ' ') ?? '')
     sats.inputMode = 'numeric'
     sats.pattern = '[0-9]+|[0-9]{1,3}([   ][0-9]{3})+'
-    function formatBalance() {
-      const raw = sats.value
-      const digits = raw.replace(/[   ]/g, '')
-      if (!/^\d+$/.test(digits)) return
-      const remaining = raw.slice(sats.selectionStart).replace(/[   ]/g, '').length
-      sats.value = digits.replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
-      let caret = sats.value.length
-      for (let count = 0; count < remaining && caret > 0;) {
-        if (sats.value[--caret] !== ' ') count++
-      }
-      sats.setSelectionRange(caret, caret)
-    }
-    sats.addEventListener('input', formatBalance)
-    sats.addEventListener('change', formatBalance)
     addField('anchorReference', 'Justificatif du solde de référence', 'text', source.anchor?.reference ?? '').maxLength = 500
     form.append(element('small', 'Laissez le solde vide si Sparrow fournit un solde cumulé exploitable. ' +
       'Sans fichier, indiquez le solde au 1er janvier et saisissez les mouvements un par un.'))
@@ -494,13 +480,11 @@ function renderSources() {
   breakdown.hidden = !opening
   $('opening-form').querySelector('button').disabled = !!opening && opening.sats === null
   if (!opening) {
-    if (fields.sats.readOnly) fields.sats.value = project.opening.sats
+    if (fields.sats.readOnly) fields.sats.value = grouped(project.opening.sats)
     fields.sats.readOnly = false
-    fields.sats.type = 'number'
     return
   }
   fields.sats.readOnly = true
-  fields.sats.type = 'text'
   // A dated opening statement can contribute to the preview before coverage is confirmed.
   const balances = opening.accounts.map((account, index) => {
     const anchor = sources[index].anchor
@@ -633,14 +617,40 @@ function render(blockedRows = new Set()) {
 
 function renderOpening() {
   const fields = $('opening-form').elements
-  fields.sats.value = project.opening.sats
-  fields.acquisitions.value = (project.opening.acquisitions / 100).toFixed(2)
-  fields.used.value = (project.opening.used / 100).toFixed(2)
+  fields.sats.value = grouped(project.opening.sats)
+  fields.acquisitions.value = grouped((project.opening.acquisitions / 100).toFixed(2))
+  fields.used.value = grouped((project.opening.used / 100).toFixed(2))
   fields.reference.value = project.opening.reference
 }
 
+function ungroup(value) {
+  return String(value).replace(/[   ]/g, '')
+}
+
+function grouped(value) {
+  const raw = ungroup(value)
+  if (!/^\d+(?:[.,]\d*)?$/.test(raw)) return String(value)
+  return raw.replace(/^\d+/, digits => digits.replace(/\B(?=(\d{3})+(?!\d))/g, ' ')).replace('.', ',')
+}
+
+function formatNumericInput(event) {
+  const input = event.target
+  if (!input.matches('input[inputmode="numeric"], input[inputmode="decimal"]')) return
+  const formatted = grouped(input.value)
+  if (formatted === input.value) return
+  const remaining = ungroup(input.value.slice(input.selectionStart)).length
+  input.value = formatted
+  let caret = formatted.length
+  for (let count = 0; count < remaining && caret > 0;) {
+    if (formatted[--caret] !== ' ') count++
+  }
+  input.setSelectionRange(caret, caret)
+}
+document.addEventListener('input', formatNumericInput, true)
+document.addEventListener('change', formatNumericInput, true)
+
 function parseEuros(value) {
-  const match = /^(\d+)(?:[.,](\d{1,2}))?$/.exec(value.trim())
+  const match = /^(\d+)(?:[.,](\d{1,2}))?$/.exec(ungroup(value.trim()))
   if (!match) throw new Error('Saisissez les montants en euros avec au plus deux décimales.')
   const cents = Number(match[1] + (match[2] ?? '').padEnd(2, '0'))
   if (!Number.isSafeInteger(cents) || cents > 100_000_000_000_000) throw new Error('Montant trop grand.')
@@ -648,6 +658,7 @@ function parseEuros(value) {
 }
 
 function parseSats(value) {
+  value = ungroup(value)
   const sats = Number(value)
   if (!/^\d+$/.test(value) || !Number.isSafeInteger(sats) || sats > 2_100_000_000_000_000) {
     throw new Error('Saisissez un nombre entier de satoshis.')
@@ -678,7 +689,7 @@ function editOperation(entry = null) {
   fields.type.value = values.type ?? (allowed.includes(proposal) ? proposal : entry?.row ? '' : 'achat')
   const sourceDate = entry?.date ?? ''
   fields.date.value = (values.date ?? sourceDate ?? '').slice(0, 19)
-  fields.sats.value = values.sats ?? entry?.event?.quantitySats ?? ''
+  fields.sats.value = grouped(values.sats ?? entry?.event?.quantitySats ?? '')
   priceDrafts = {}
   priceKind = null
   importedAcquisitionPrice = ''
@@ -691,8 +702,8 @@ function editOperation(entry = null) {
   if (importedKind && raw.prix_eur) priceDrafts[importedKind] = raw.prix_eur
   const savedKind = grossKind(values.type)
   if (savedKind && values.gross !== undefined) priceDrafts[savedKind] = String(values.gross / 100)
-  fields.fee.value = values.fee === undefined ? raw.frais_eur ?? '' : values.fee / 100
-  fields.portfolio.value = values.portfolio === undefined ? raw.portefeuille_eur ?? '' : values.portfolio / 100
+  fields.fee.value = grouped(values.fee === undefined ? raw.frais_eur ?? '' : values.fee / 100)
+  fields.portfolio.value = grouped(values.portfolio === undefined ? raw.portefeuille_eur ?? '' : values.portfolio / 100)
   fields.reference.value = values.reference ??
     (raw.justificatif || importedLabel(entry)).slice(0, fields.reference.maxLength)
   fields.valuationReference.value = values.valuationReference ?? raw.valorisation ?? ''
@@ -729,7 +740,7 @@ function updateOperationFields(selectedPeer) {
   const nextPriceKind = grossKind(type)
   if (priceKind !== nextPriceKind) {
     if (priceKind) priceDrafts[priceKind] = fields.gross.value
-    fields.gross.value = nextPriceKind ? priceDrafts[nextPriceKind] ?? '' : ''
+    fields.gross.value = grouped(nextPriceKind ? priceDrafts[nextPriceKind] ?? '' : '')
     priceKind = nextPriceKind
   }
   $('acquisition-estimate-note').hidden = type !== 'achat' || !importedAcquisitionPrice ||
@@ -904,7 +915,7 @@ operationForm.elements.date.addEventListener('input', () => {
 $('apply-portfolio-estimate').addEventListener('click', () => {
   const estimate = updatePortfolioEstimate()
   if (estimate === null) return
-  appliedPortfolioEstimate = (estimate / 100).toFixed(2).replace('.', ',')
+  appliedPortfolioEstimate = grouped((estimate / 100).toFixed(2).replace('.', ','))
   operationForm.elements.portfolio.value = appliedPortfolioEstimate
   operationForm.elements.portfolio.focus()
 })
