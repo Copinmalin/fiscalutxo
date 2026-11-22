@@ -10,11 +10,11 @@ a{color:var(--accent);text-underline-offset:.2em}
 main,#status{max-width:1060px;margin:auto;padding-inline:1rem}
 #status{min-height:2.15rem;padding-top:.55rem;color:var(--muted);font-size:.9rem}
 #status.error,#operation-error,.import-status.error{color:var(--error)}
-.intro{display:flex;align-items:end;justify-content:space-between;gap:2rem;margin:1.1rem 0 1.6rem}
-.intro>p{max-width:34ch;margin:0 0 .3rem;color:var(--muted)}
-.intro label{margin-top:.65rem}
+.intro{margin:1rem 0 1.6rem}
+.intro>p{margin:0 0 .9rem;color:var(--muted)}
+#status:empty{min-height:0;padding-top:0}
 h1,h2,h3,p{margin-top:0}
-h1{font-size:clamp(2.1rem,6vw,3.75rem);line-height:1.05;letter-spacing:-.055em;margin-bottom:0}
+.brand h1{font:inherit;margin:0}
 h2{font-size:1.55rem;letter-spacing:-.025em;margin-bottom:1rem}
 h3{font-size:1.03rem;margin-bottom:.8rem}
 section{padding:1.3rem;margin:0 0 1rem;background:var(--paper);border:1px solid var(--line);border-radius:.65rem;scroll-margin-top:1rem}
@@ -88,7 +88,7 @@ dialog .input-grid{gap:0 1rem}
 #portfolio-estimate-controls label{max-width:26rem}
 #apply-label-suggestion{margin-bottom:.72rem}
 [hidden]{display:none!important}
-@media(max-width:680px){.header{flex-wrap:wrap}.header nav{order:3;width:100%}.intro{align-items:start;flex-direction:column;gap:.8rem}.panels,.input-grid{grid-template-columns:1fr}.panels>div+div{padding:1rem 0 0;border-left:0;border-top:1px solid var(--line)}.file-actions{flex-wrap:wrap}}
+@media(max-width:680px){.header{flex-wrap:wrap}.header nav{order:3;width:100%}.panels,.input-grid{grid-template-columns:1fr}.panels>div+div{padding:1rem 0 0;border-left:0;border-top:1px solid var(--line)}.file-actions{flex-wrap:wrap}}
 .result-actions,.exports{flex-wrap:wrap}
 .source-form{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:.6rem}
 .source-form button{margin-bottom:.72rem}
