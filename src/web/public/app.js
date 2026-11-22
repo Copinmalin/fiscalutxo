@@ -502,7 +502,8 @@ function renderSources() {
 function renderAccounts() {
   const accountsBySource = new Map(project.accounts.filter(account => account.sourceId)
     .map(account => [account.sourceId, account]))
-  const sourceItems = project.sources.map(source => {
+  const visibleSources = project.sources.filter(source => accountsBySource.get(source.id)?.country !== 'FR')
+  const sourceItems = visibleSources.map(source => {
     const account = accountsBySource.get(source.id)
     const wallet = source.kind === 'wallet'
     const item = element('li')
@@ -513,7 +514,7 @@ function renderAccounts() {
     else if (!account) details = ['Plateforme', 'Pays de l’entité à renseigner']
     else {
       const entity = account.entity === source.name ? null : account.entity
-      const reporting = account.country === 'FR' || !account.relevant ? 'Hors 3916-bis' :
+      const reporting = !account.relevant ? 'Hors 3916-bis' :
         account.reference ? 'À déclarer' : 'Référence du compte à renseigner'
       details = ['Plateforme', entity, account.country, reporting, account.reference]
     }
@@ -521,8 +522,8 @@ function renderAccounts() {
     item.append(description)
     return item
   })
-  const legacyItems = project.accounts.filter(account => !account.sourceId).map(account => {
-    const reporting = account.country === 'FR' || !account.relevant ? 'Hors 3916-bis' : 'À déclarer'
+  const legacyItems = project.accounts.filter(account => !account.sourceId && account.country !== 'FR').map(account => {
+    const reporting = !account.relevant ? 'Hors 3916-bis' : 'À déclarer'
     const item = element('li')
     item.append(element('span', [account.entity, account.country, reporting, account.reference].filter(Boolean).join(' · ')),
       button('Retirer', () => {
