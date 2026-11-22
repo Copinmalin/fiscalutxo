@@ -104,7 +104,6 @@ dialog .input-grid{gap:0 1rem}
 .portfolio-balances{margin:0 0 .75rem;padding-left:1.25rem}
 @media(max-width:580px){.source-form{grid-template-columns:1fr}}
 
-.account-detail{margin-top:.15rem;color:var(--muted);font-size:.87rem}
 
 .validation-attempted :is(input,select,textarea):invalid {
   border: 2px solid var(--error);

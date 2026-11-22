@@ -280,10 +280,7 @@ function importSources() {
 function renderSources() {
   const sources = project.sources
   const start = fiscalPeriod(project.year).start
-  const opening = sources.length ? walletBalances(project, start) : null
-  const preview = sources.some(source => !source.coverage)
-    ? walletBalances({ ...project, sources: sources.map(source => ({ ...source, coverage: true })) }, start)
-    : opening
+  const opening = sources.length ? walletBalances(project, start, undefined, false, true) : null
   const panel = $('import-panel')
   $('import-home').prepend(panel)
   const destinations = importSources()
@@ -304,8 +301,8 @@ function renderSources() {
     group.dataset.source = source.id
     group.open = expanded.has(source.id)
     const balance = opening.accounts[index]
-    const automatic = preview.accounts[index].automatic ? preview.accounts[index].sats : null
-    const autoReference = automatic === null ? '' : 'Solde reconstitué depuis les relevés importés'
+    const automatic = balance.automatic ? balance.sats : null
+    const autoReference = balance.assumesZero ? 'Historique depuis un solde initial nul, à confirmer' : automatic === null ? '' : 'Solde reconstitué depuis les relevés importés'
     const count = project.imports.filter(bundle => bundle.source.id === source.id).length
     const label = source.kind === 'wallet' ? 'Wallet' : 'Plateforme'
     group.append(element('summary', source.name + ' · ' + label + ' · ' + count + ' fichier(s) · ' +
@@ -344,16 +341,16 @@ function renderSources() {
     form.append(element('h4', 'Solde de référence'))
     addField('anchorDate', 'Date et heure UTC du solde de référence', 'datetime-local',
       (source.anchor?.date ?? start).slice(0, 19)).step = '1'
-    const sats = addField('anchorSats', 'Solde en sats au début de cet instant', 'text',
+    const sats = addField('anchorSats', 'Solde en sats à date de référence', 'text',
       (source.anchor?.sats ?? automatic)?.toLocaleString('fr-FR').replace(/ /g, ' ') ?? '')
     sats.inputMode = 'numeric'
     sats.pattern = '[0-9]+|[0-9]{1,3}([   ][0-9]{3})+'
     addField('anchorReference', 'Justificatif du solde de référence', 'text', source.anchor?.reference ?? autoReference).maxLength = 500
-    form.append(element('small', 'Laissez le solde vide si le fichier fournit un solde cumulé exploitable. ' +
-      'Sans fichier, indiquez le solde au 1er janvier et saisissez les mouvements un par un.'))
+    form.append(element('small', balance.assumesZero ? 'Estimation à vérifier : le CSV contient des mouvements sans solde. Validez ce montant uniquement si l’historique commence à zéro, ou corrigez-le avec votre relevé.' : balance.reason ?? 'Montant au début de la date et heure UTC indiquées.'))
     const coverage = element('input')
     coverage.type = 'checkbox'
     coverage.checked = source.coverage
+    coverage.required = !!balance.assumesZero
     const confirmation = element('label', undefined, 'check')
     confirmation.append(coverage, element('span', 'J’ai recensé tous les mouvements de cette source entre le solde de référence, le début de l’année et la dernière cession à traiter.'))
     form.append(confirmation)
@@ -465,7 +462,7 @@ function renderSources() {
           anchor = { date: new Date(fields.anchorDate.value + 'Z').toISOString(), sats: parseSats(sats.value.replace(/[   ]/g, '')), reference }
         }
         saveAccount()
-        if (!source.anchor && anchor?.sats === automatic && anchor.date === start && anchor.reference === autoReference) anchor = undefined
+        if (!balance.assumesZero && !source.anchor && anchor?.sats === automatic && anchor.date === start && anchor.reference === autoReference) anchor = undefined
         if (anchor) source.anchor = anchor
         else delete source.anchor
         source.coverage = coverage.checked
@@ -491,11 +488,8 @@ function renderSources() {
     return
   }
   fields.sats.readOnly = true
-  // A dated opening statement can contribute to the preview before coverage is confirmed.
-  const balances = opening.accounts.map((account, index) => {
-    const anchor = sources[index].anchor
-    return account.sats ?? preview.accounts[index].sats ?? (anchor && Date.parse(anchor.date) === Date.parse(start) ? anchor.sats : null)
-  }).filter(value => value !== null)
+  const balances = opening.accounts.map(account => account.sats).filter(value => value !== null)
+  if (fields.reference.value === 'Aucun avoir au 1er janvier ' + project.year && (!balances.length || balances.some(value => value > 0))) fields.reference.value = ''
   const subtotal = balances.reduce((sum, value) => sum + BigInt(value), 0n)
   fields.sats.value = balances.length ? subtotal.toLocaleString('fr-FR') : ''
   breakdown.textContent = opening.sats === null

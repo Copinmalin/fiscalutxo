@@ -16,9 +16,9 @@ export function importedBalanceAfter(payload: Record<string, string>) {
 }
 
 type Movement = { id: string; date: number; delta: bigint | null; operation?: Operation; after: bigint | null; txid?: string }
-type SourceBalance = { id: string; name: string; sats: number | null; reason?: string; automatic?: boolean }
+type SourceBalance = { id: string; name: string; sats: number | null; reason?: string; automatic?: boolean; assumesZero?: boolean }
 
-export function walletBalances(project: Project, at: string, selected?: string, newManual = false) {
+export function walletBalances(project: Project, at: string, selected?: string, newManual = false, previewOpening = false) {
   const target = Date.parse(at)
   const opening = Date.parse(fiscalPeriod(project.year).start)
   const sources = project.sources ?? []
@@ -31,7 +31,7 @@ export function walletBalances(project: Project, at: string, selected?: string, 
   const accounts = sources.map((source): SourceBalance => {
     const base = { id: source.id, name: source.name }
     const missing = (reason: string): SourceBalance => ({ ...base, sats: null, reason })
-    if (!source.coverage) return missing('Confirmez la couverture de l’historique.')
+    if (!source.coverage && !previewOpening) return missing('Confirmez la couverture de l’historique.')
     const movements: Movement[] = []
     for (const bundle of project.imports.filter(item => item.source.id === source.id)) {
       if (bundle.import.importStatus === 'failed') return missing('Un fichier de cette source est illisible.')
@@ -77,9 +77,14 @@ export function walletBalances(project: Project, at: string, selected?: string, 
     const firstAfterOpening = automatic.find(move => move.date >= opening)
     const lastBeforeOpening = automatic.filter(move => move.date < opening).at(-1)
     const snapshot = firstAfterOpening ?? lastBeforeOpening
-    if (!source.anchor && !snapshot) return missing('Ajoutez un solde de référence daté.')
-    const anchorDate = source.anchor ? Date.parse(source.anchor.date) : snapshot!.date
-    const anchorSats = source.anchor ? BigInt(source.anchor.sats) : snapshot!.after! - snapshot!.delta!
+    const first = active[0]
+    const assumesZero = !source.anchor && !snapshot
+    if (assumesZero && !(previewOpening && target === opening && first && first.date < opening &&
+        !active.some(move => move.after !== null))) {
+      return missing('Indiquez un solde de référence daté : le fichier ne contient pas de solde exploitable.')
+    }
+    const anchorDate = source.anchor ? Date.parse(source.anchor.date) : snapshot?.date ?? first!.date
+    const anchorSats = source.anchor ? BigInt(source.anchor.sats) : snapshot ? snapshot.after! - snapshot.delta! : 0n
     if (newManual && anchorDate > target) return missing('Ajoutez un solde de référence antérieur à cette cession manuelle.')
     if (!Number.isFinite(target)) return missing('Renseignez la date de la cession.')
     const selectedMovement = selected ? byId.get(selected) : undefined
@@ -135,10 +140,10 @@ export function walletBalances(project: Project, at: string, selected?: string, 
         return missing('Le solde de référence et les mouvements ne concordent pas.')
       }
     }
-    return { ...base, sats: Number(balance), automatic: !source.anchor }
+    return { ...base, sats: Number(balance), automatic: !source.anchor, assumesZero }
   })
   const total = accounts.reduce((sum, account) => sum + BigInt(account.sats ?? 0), 0n)
-  const sats = accounts.length && !unassigned && total <= maxSats && accounts.every(account => account.sats !== null)
+  const sats = accounts.length && !unassigned && total <= maxSats && accounts.every((account, index) => account.sats !== null && !account.assumesZero && sources[index]!.coverage)
     ? Number(total) : null
   return { accounts, sats, unassigned }
 }

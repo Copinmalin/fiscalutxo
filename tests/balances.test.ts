@@ -71,7 +71,19 @@ describe('soldes par source', () => {
     delete platform.anchor
     expect(walletBalances(project, start).accounts[0]).toMatchObject({ sats: 1_200_000, automatic: true })
     for (const row of project.imports[0]!.rawRows) delete row.rawPayload.solde_sats
-    expect(walletBalances(project, start).accounts[0]).toMatchObject({ sats: null, reason: 'Ajoutez un solde de référence daté.' })
+    expect(walletBalances(project, start).accounts[0]).toMatchObject({ sats: null, reason: expect.stringContaining('solde de référence') })
+  })
+
+  it('propose le cumul historique sans solde uniquement en aperçu, avant confirmation', () => {
+    const { project } = scenario()
+    const platform = project.sources[0]!
+    delete platform.anchor
+    platform.coverage = false
+    for (const row of project.imports[0]!.rawRows) delete row.rawPayload.solde_sats
+    expect(walletBalances(project, start, undefined, false, true)).toMatchObject({
+      sats: null, accounts: [{ sats: 1_200_000, assumesZero: true }, { sats: 300_000 }],
+    })
+    expect(walletBalances(project, start).accounts[0]?.sats).toBeNull()
   })
 
   it('reprend une saisie manuelle rattachée à un wallet sans fichier', () => {
