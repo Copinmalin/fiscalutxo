@@ -103,5 +103,7 @@ dialog .input-grid{gap:0 1rem}
 #opening-form{max-width:38rem}
 .portfolio-balances{margin:0 0 .75rem;padding-left:1.25rem}
 @media(max-width:580px){.source-form{grid-template-columns:1fr}}
+
+.account-detail{margin-top:.15rem;color:var(--muted);font-size:.87rem}
 .preview-links{margin:0 0 1rem}
 .preview-guide li{margin-bottom:.65rem}
