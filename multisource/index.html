@@ -4,13 +4,13 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>fiscalutxomulti</title>
-  <link rel="stylesheet" href="./style.css?v=382872c8b02a">
+  <title>FiscalUTXO-multi</title>
+  <link rel="stylesheet" href="./style.css?v=6882a833ef72">
   <script type="module" src="./app.js?v=382872c8b02a"></script>
 </head>
 <body>
   <header class="header">
-    <div class="brand"><span class="brand-mark" aria-hidden="true">₿</span><span>fiscalutxomulti</span></div>
+    <div class="brand"><span class="brand-mark" aria-hidden="true">₿</span><h1>FiscalUTXO-multi</h1></div>
     <nav aria-label="Dossier"><a href="#imports">Imports</a><a href="#operations">Opérations</a><a href="#resultats">Résultats</a></nav>
     <div class="file-actions">
       <button id="load-demo" type="button" class="secondary">Essayer avec un exemple</button>
@@ -22,13 +22,11 @@
   <p id="status" role="status" aria-live="polite"></p>
   <main id="workspace">
     <div class="intro">
-      <div><h1>Dossier Bitcoin multi-source</h1>
+      <p>Préparez l’annexe 2086 et retrouvez les montants à reporter. Les fichiers et les calculs restent sur cet appareil.</p>
         <label>Campagne déclarative<select id="fiscal-year">
           <option value="2025">2026 · opérations 2025</option>
           <option value="2026">2027 · opérations 2026</option>
         </select></label>
-      </div>
-      <p>Préparez l’annexe 2086 et retrouvez les montants à reporter. Les fichiers et les calculs restent sur cet appareil.</p>
     </div>
 
     <aside class="preview-links" aria-label="Versions et fichiers de test">
