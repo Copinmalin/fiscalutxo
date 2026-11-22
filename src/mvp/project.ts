@@ -19,6 +19,7 @@ const date = z.iso.datetime().refine(value => {
 const type = z.enum(['achat', 'vente', 'paiement', 'transfert', 'doublon', 'historique', 'post_cloture', 'hors_perimetre'])
 export const operationSchema = z.object({
   rowId: key.optional(),
+  sourceId: key.optional(),
   type,
   date: date.optional(),
   sats: satoshis.optional(),
@@ -66,23 +67,39 @@ const bundleSchema = z.object({
   errors: z.array(z.string()),
   sourceText: z.string().optional(),
 })
+const inventorySource = z.object({
+  id: key, name: reference.max(120), kind: z.enum(['wallet', 'platform']),
+  coverage: z.boolean(),
+  anchor: z.object({ date, sats: satoshis, reference }).optional(),
+})
+
 export const projectSchema = z.object({
   schemaVersion: z.literal('fiscalutxo-project.v1'),
   year: fiscalYearSchema,
   complete: z.boolean(),
-  opening: z.object({ sats: satoshis, acquisitions: cents, used: cents, reference }),
+  opening: z.object({ sats: satoshis, acquisitions: cents, used: cents, reference, confirmed: z.boolean().optional() }),
+  sources: z.array(inventorySource).default([]),
   imports: z.array(bundleSchema),
   operations: z.record(key, operationSchema),
   accounts: z.array(z.object({
-    entity: reference, country: z.string().trim().regex(/^[A-Z]{2}$/),
+    sourceId: key.optional(), entity: reference, country: z.string().trim().regex(/^[A-Z]{2}$/),
     reference: z.string().trim().max(200), relevant: z.boolean(),
   })),
   accountsReviewed: z.boolean(),
 }).superRefine((project, ctx) => {
   const issue = (message: string) => ctx.addIssue({ code: 'custom', message })
   if (project.opening.used > project.opening.acquisitions) issue('Capital consommé supérieur aux acquisitions')
-  if (!project.opening.sats && project.opening.used !== project.opening.acquisitions) {
+  if (!project.sources.length && !project.opening.sats && project.opening.used !== project.opening.acquisitions) {
     issue('Un solde d’ouverture nul doit avoir un capital restant nul')
+  }
+  const sourceIds = new Set(project.sources.map(source => source.id))
+  if (sourceIds.size !== project.sources.length) issue('Source déclarée en double')
+  const linkedAccounts = new Set<string>()
+  const platformIds = new Set(project.sources.filter(source => source.kind === 'platform').map(source => source.id))
+  for (const account of project.accounts) {
+    if (!account.sourceId) continue
+    if (!platformIds.has(account.sourceId) || linkedAccounts.has(account.sourceId)) issue('Lien de compte plateforme invalide')
+    linkedAccounts.add(account.sourceId)
   }
   const fileHashes = new Set<string>()
   const importIds = new Set<string>()
@@ -109,6 +126,7 @@ export const projectSchema = z.object({
     }
   }
   for (const [id, operation] of Object.entries(project.operations)) {
+    if (operation.sourceId && (operation.rowId || !sourceIds.has(operation.sourceId))) issue('Source de saisie manuelle invalide')
     if (operation.rowId ? operation.rowId !== id || !rowIds.has(id) : !id.startsWith('manual:') || rowIds.has(id)) {
       issue('Lien de qualification invalide')
     }
@@ -123,7 +141,7 @@ export function emptyProject(year: Project['year'] = defaultFiscalYear): Project
   return {
     schemaVersion: 'fiscalutxo-project.v1', year, complete: false,
     opening: { sats: 0, acquisitions: 0, used: 0, reference: 'Aucun avoir au 1er janvier ' + year },
-    imports: [], operations: {}, accounts: [], accountsReviewed: false,
+    sources: [], imports: [], operations: {}, accounts: [], accountsReviewed: false,
   }
 }
 
@@ -160,10 +178,17 @@ export const importInputSchema = z.object({
   format: z.enum(['sparrow', 'generique', 'bundle']),
   name: key,
   source: key,
+  sourceId: key.optional(),
   content: z.string().min(1),
 })
 
-export function ingest({ project, format, content, name, source }: z.infer<typeof importInputSchema>) {
+export function ingest({ project, format, content, name, source, sourceId: selectedId }: z.infer<typeof importInputSchema>) {
+  const registered = selectedId ? project.sources.find(item => item.id === selectedId) : undefined
+  const legacy = selectedId && !project.sources.length
+    ? project.imports.find(bundle => bundle.source.id === selectedId)?.source
+    : undefined
+  const target = registered ?? (legacy && { id: legacy.id, name: legacy.name, kind: legacy.sourceType })
+  if (selectedId && !target) throw new z.ZodError([{ code: 'custom', path: ['sourceId'], message: 'Sélectionnez une source déclarée.' }])
   let bundle: Bundle
   if (format === 'bundle') {
     bundle = bundleSchema.parse(JSON.parse(content))
@@ -172,13 +197,14 @@ export function ingest({ project, format, content, name, source }: z.infer<typeo
         if (event.occurredAt?.startsWith('1970-01-01')) event.occurredAt = null
       }
     }
-    bundle.source.id = 'src:' + digest(bundle.source.sourceType + ':' + source.trim().toLowerCase())
-    bundle.source.name = source
+    bundle.source.id = target?.id ?? 'src:' + digest(bundle.source.sourceType + ':' + source.trim().toLowerCase())
+    bundle.source.name = target?.name ?? source
+    if (target) bundle.source.sourceType = target.kind
     bundle.import.sourceId = bundle.source.id
     for (const event of bundle.normalizedEvents) event.sourceRef.sourceId = bundle.source.id
   } else {
     const fingerprint = 'sha256:' + digest(content)
-    const sourceId = 'src:' + digest((format === 'sparrow' ? 'wallet' : 'platform') + ':' + source.trim().toLowerCase())
+    const sourceId = target?.id ?? 'src:' + digest((format === 'sparrow' ? 'wallet' : 'platform') + ':' + source.trim().toLowerCase())
     const importId = 'imp:' + digest(fingerprint)
     const context = { sourceId, importId }
     const parseResult = format === 'sparrow'
@@ -187,7 +213,7 @@ export function ingest({ project, format, content, name, source }: z.infer<typeo
     bundle = bundleSchema.parse(createSparrowImportBundle({
       ...context, fileName: name, fileFingerprint: fingerprint, importedAt: new Date().toISOString(),
       parseResult, sourceText: content, source: {
-        id: sourceId, name: source, sourceType: format === 'sparrow' ? 'wallet' : 'platform',
+        id: sourceId, name: target?.name ?? source, sourceType: target?.kind ?? (format === 'sparrow' ? 'wallet' : 'platform'),
         country: null, isFrenchPlatform: false, requires3916Review: format !== 'sparrow',
       },
     }))
@@ -213,19 +239,22 @@ function parseGeneric(csv: string, context: { importId: string; sourceId: string
   }
   try {
     const [header, ...records] = readCsv(csv)
-    if (JSON.stringify(header?.record) !== JSON.stringify(genericHeaders)) {
+    const headers = header?.record ?? []
+    const expected = headers.at(-1) === 'solde_sats' ? [...genericHeaders, 'solde_sats'] : genericHeaders
+    if (JSON.stringify(headers) !== JSON.stringify(expected)) {
       result.errors.push('En-têtes du CSV générique invalides')
       return result
     }
     records.forEach(({ record, info }) => {
       const rowNumber = info.lines
       const id = context.importId + ':row:' + rowNumber
-      const rawPayload = Object.fromEntries(genericHeaders.map((field, column) => [field, record[column] ?? '']))
+      const rawPayload = Object.fromEntries(headers.map((field, column) => [field, record[column] ?? '']))
       const occurredAt = date.safeParse(rawPayload.date_utc)
       const amount = satoshis.safeParse(parseFixedDecimal(rawPayload.sats ?? '', 0))
       const kind = z.enum(['achat', 'vente', 'paiement', 'depot', 'retrait']).safeParse(rawPayload.type)
       const rowErrors = []
-      if (record.length !== genericHeaders.length) rowErrors.push('Nombre de colonnes invalide')
+      if (record.length !== headers.length) rowErrors.push('Nombre de colonnes invalide')
+      if (rawPayload.solde_sats && (!/^\d+$/.test(rawPayload.solde_sats) || !satoshis.safeParse(Number(rawPayload.solde_sats)).success)) rowErrors.push('Solde après opération invalide')
       if (!occurredAt.success) rowErrors.push('Date UTC invalide')
       if (!amount.success || !amount.data) rowErrors.push('Quantité en sats invalide')
       if (!kind.success) rowErrors.push('Type inconnu')

@@ -1,5 +1,6 @@
 import type { Operation, Project } from './project.js'
-import { fiscalPeriod, importedDate, inFiscalPeriod } from './period.js'
+import { walletBalances } from './balances.js'
+import { fiscalPeriod, sourceRows, inFiscalPeriod } from './period.js'
 
 const PRECISION = 100_000_000n
 const THRESHOLD = 30_500n
@@ -8,14 +9,7 @@ const sale = (item: Operation) => item.type === 'vente' || item.type === 'paieme
 const cent = (amount: bigint) =>
   Number(amount < 0n ? -((-amount + PRECISION / 2n) / PRECISION) : (amount + PRECISION / 2n) / PRECISION)
 
-export function sourceRows(project: Project) {
-  return project.imports.flatMap(bundle => {
-    const byRow = new Map(bundle.normalizedEvents.map(event => [event.sourceRef.rawRowId, event]))
-    return bundle.rawRows.map(row => ({
-      row, bundle, event: byRow.get(row.id), operation: project.operations[row.id],
-    }))
-  })
-}
+export { sourceRows } from './period.js'
 
 export function calculate(project: Project) {
   const blockers: { id?: string; message: string }[] = []
@@ -27,10 +21,21 @@ export function calculate(project: Project) {
   }
   const rows = sourceRows(project)
   const { start, end } = fiscalPeriod(project.year)
-  const outsideRows = new Set(rows.filter(item => {
-    const date = importedDate(item.row.rawPayload, item.event?.occurredAt)
-    return date && !inFiscalPeriod(date, project.year)
-  }).map(item => item.row.id))
+  const inventory = project.sources?.length ? walletBalances(project, start) : null
+  if (inventory) {
+    if (!project.opening.confirmed) block('Validez le capital d’acquisition à l’ouverture.')
+    if (inventory.unassigned) block('Rattachez les imports et les saisies manuelles aux sources déclarées.')
+    for (const account of inventory.accounts) {
+      if (account.sats === null) block(account.name + ' · ' + account.reason)
+    }
+    if (inventory.sats === null && !inventory.unassigned && inventory.accounts.every(account => account.sats !== null)) {
+      block('Le solde d’ouverture global dépasse la quantité maximale de BTC.')
+    }
+    if (inventory.sats === 0 && project.opening.acquisitions !== project.opening.used) {
+      block('Un solde d’ouverture nul doit avoir un capital restant nul.')
+    }
+  }
+  const outsideRows = new Set(rows.filter(item => item.outsidePeriod).map(item => item.id))
   const byRow = new Map(rows.filter(item => !outsideRows.has(item.row.id)).map(item => [item.row.id, item]))
   const activeKeys = new Set<string>()
   const exactDuplicates = new Map<string, string>()
@@ -69,7 +74,7 @@ export function calculate(project: Project) {
       continue
     }
     if (operation.type === 'historique' || operation.type === 'post_cloture') {
-      const rawDate = item && importedDate(item.row.rawPayload, item.event?.occurredAt)
+      const rawDate = item?.date
       const inHistoricalPeriod = (value: string) => Date.parse(value) < Date.parse(start)
       const afterClosing = (value: string) => Date.parse(value) >= Date.parse(end)
       const inPeriod = operation.type === 'historique' ? inHistoricalPeriod : afterClosing
@@ -131,7 +136,7 @@ export function calculate(project: Project) {
   }
 
   timeline.sort((a, b) => a.operation.date.localeCompare(b.operation.date) || a.id.localeCompare(b.id))
-  let balance = BigInt(project.opening.sats)
+  let balance = BigInt(inventory ? inventory.sats ?? 0 : project.opening.sats)
   let acquisitions = BigInt(project.opening.acquisitions) * PRECISION
   let used = BigInt(project.opening.used) * PRECISION
   let proceeds = 0n
@@ -165,7 +170,7 @@ export function calculate(project: Project) {
       acquisitions: cent(acquisitions), used: cent(used), basis: cent(basis),
       fraction: cent(fraction), gain: cent(result), reference: operation.reference,
       valuationReference: operation.valuationReference!,
-      source: linked ? linked.bundle.source.name : 'Saisie manuelle',
+      source: linked?.bundle.source.name ?? project.sources?.find(source => source.id === operation.sourceId)?.name ?? 'Saisie manuelle',
       file: linked?.bundle.import.fileName ?? '', row: linked?.row.rowNumber ?? null,
     })
     gain += result
@@ -177,6 +182,11 @@ export function calculate(project: Project) {
     }
   }
 
+  for (const source of project.sources ?? []) {
+    if (source.kind === 'platform' && !project.accounts.some(account => account.sourceId === source.id)) {
+      block(source.name + ' · Renseignez le pays de l’entité qui tient le compte.')
+    }
+  }
   if (project.accounts.some(account => account.relevant && account.country !== 'FR' && !account.reference)) {
     block('Renseignez la référence de chaque compte étranger concerné.')
   }

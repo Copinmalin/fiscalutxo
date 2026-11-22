@@ -1,3 +1,4 @@
+import { export3916 } from '../mvp/pdf-3916.js'
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
 import { readFile } from 'node:fs/promises'
 import { z } from 'zod'
@@ -8,6 +9,7 @@ import { demoProject, emptyProject, fiscalYearSchema, importInputSchema, ingest,
 const assets = {
   '/': ['./public/index.html', 'text/html; charset=utf-8'],
   '/app.js': ['./public/app.js', 'text/javascript; charset=utf-8'],
+  '/balances.js': ['../mvp/balances.js', 'text/javascript; charset=utf-8'],
   '/period.js': ['../mvp/period.js', 'text/javascript; charset=utf-8'],
   '/transport.js': ['./public/transport.js', 'text/javascript; charset=utf-8'],
   '/style.css': ['./public/style.css', 'text/css; charset=utf-8'],
@@ -40,7 +42,7 @@ export function createLocalServer() {
       if (!parsed.success) return json(response, 422, { error: 'Année des opérations invalide' })
       return json(response, 200, route === '/api/new' ? emptyProject(parsed.data) : demoProject(parsed.data))
     }
-    if (request.method !== 'POST' || !['/api/import', '/api/check', '/api/export'].includes(path)) {
+    if (request.method !== 'POST' || !['/api/import', '/api/check', '/api/export', '/api/3916'].includes(path)) {
       return json(response, 404, { error: 'Route inconnue' })
     }
     if (request.headers.origin !== 'http://' + host ||
@@ -49,6 +51,12 @@ export function createLocalServer() {
     }
     try {
       const input = await readJson(request)
+      if (path === '/api/3916') {
+        const template = await readFile(new URL('./public/3916-2026.pdf', import.meta.url))
+        const bytes = await export3916(template, input)
+        response.writeHead(200, {'Content-Type':'application/pdf'}).end(bytes)
+        return
+      }
       if (path === '/api/import') return json(response, 200, ingest(importInputSchema.parse(input)))
       if (path === '/api/check') {
         const project = projectSchema.parse(input)

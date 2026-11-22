@@ -1,3 +1,5 @@
+import template3916 from './public/3916-2026.pdf'
+import { export3916 } from '../mvp/pdf-3916.js'
 import { ZodError, z } from 'zod'
 import { demoProject, emptyProject, fiscalYearSchema, importInputSchema, ingest, projectSchema } from '../mvp/project.js'
 import { calculate } from '../mvp/tax.js'
@@ -18,6 +20,7 @@ export async function request(path: string, data?: unknown) {
         const project = projectSchema.parse(data)
         return { project, result: calculate(project) }
       }
+      case '3916': return new Blob([new Uint8Array(await export3916(template3916, data))], {type:'application/pdf'})
       case 'export': {
         const { project, format } = exportSchema.parse(data)
         const result = calculate(project)

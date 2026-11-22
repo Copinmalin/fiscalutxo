@@ -10,11 +10,11 @@ a{color:var(--accent);text-underline-offset:.2em}
 main,#status{max-width:1060px;margin:auto;padding-inline:1rem}
 #status{min-height:2.15rem;padding-top:.55rem;color:var(--muted);font-size:.9rem}
 #status.error,#operation-error,.import-status.error{color:var(--error)}
-.intro{display:flex;align-items:end;justify-content:space-between;gap:2rem;margin:1.1rem 0 1.6rem}
-.intro>p{max-width:34ch;margin:0 0 .3rem;color:var(--muted)}
-.intro label{margin-top:.65rem}
+.intro{margin:1rem 0 1.6rem}
+.intro>p{margin:0 0 .9rem;color:var(--muted)}
+#status:empty{min-height:0;padding-top:0}
 h1,h2,h3,p{margin-top:0}
-h1{font-size:clamp(2.1rem,6vw,3.75rem);line-height:1.05;letter-spacing:-.055em;margin-bottom:0}
+.brand h1{font:inherit;margin:0}
 h2{font-size:1.55rem;letter-spacing:-.025em;margin-bottom:1rem}
 h3{font-size:1.03rem;margin-bottom:.8rem}
 section{padding:1.3rem;margin:0 0 1rem;background:var(--paper);border:1px solid var(--line);border-radius:.65rem;scroll-margin-top:1rem}
@@ -64,8 +64,6 @@ button:disabled{cursor:default;opacity:.52}
   #operations .col-status{width:6.9rem}
   #operations th,#operations td{padding-inline:.35rem}
 }
-.account-form{display:grid;grid-template-columns:2fr 5rem 2fr auto;gap:.65rem;align-items:end}
-.account-form button{margin-bottom:.72rem}
 .check{display:flex;align-items:baseline;gap:.5rem;margin:.9rem 0;font-weight:600}
 .check input{accent-color:var(--accent);flex-shrink:0}
 .result-actions{justify-content:space-between}
@@ -90,5 +88,49 @@ dialog .input-grid{gap:0 1rem}
 #portfolio-estimate-controls label{max-width:26rem}
 #apply-label-suggestion{margin-bottom:.72rem}
 [hidden]{display:none!important}
-@media(max-width:680px){.header{flex-wrap:wrap}.header nav{order:3;width:100%}.intro{align-items:start;flex-direction:column;gap:.8rem}.panels,.input-grid{grid-template-columns:1fr}.panels>div+div{padding:1rem 0 0;border-left:0;border-top:1px solid var(--line)}.account-form{grid-template-columns:1fr 5rem}.account-form label:nth-child(3){grid-column:1/-1}.file-actions{flex-wrap:wrap}}
+@media(max-width:680px){.header{flex-wrap:wrap}.header nav{order:3;width:100%}.panels,.input-grid{grid-template-columns:1fr}.panels>div+div{padding:1rem 0 0;border-left:0;border-top:1px solid var(--line)}.file-actions{flex-wrap:wrap}}
 .result-actions,.exports{flex-wrap:wrap}
+.source-form{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:.6rem}
+.source-form button{margin-bottom:.72rem}
+.source-card{border:1px solid var(--line);border-radius:.35rem;padding:.55rem .65rem;margin:0 0 .55rem}
+.source-card summary{cursor:pointer;overflow-wrap:anywhere}
+.source-card-form{margin-top:.7rem;max-width:38rem}
+.source-card-form .check{flex-direction:row;align-items:baseline}
+.source-card-form button + button{margin-left:.45rem}
+.source-import-button{margin-top:.65rem}
+.source-card h4,#import-panel h4{margin:.7rem 0}
+.source-card #import-panel{margin:.65rem 0;padding:.75rem;border:1px solid var(--line);border-radius:.35rem}
+#opening-form{max-width:38rem}
+.portfolio-balances{margin:0 0 .75rem;padding-left:1.25rem}
+@media(max-width:580px){.source-form{grid-template-columns:1fr}}
+
+
+.validation-attempted :is(input,select,textarea):invalid {
+  border: 2px solid var(--error);
+  background-color: #fff4ef;
+}
+.validation-attempted label:has(:invalid)::after {
+  content: "À compléter ou à corriger";
+  color: var(--error);
+  font-size: .82rem;
+}
+.validation-attempted input[type=checkbox]:invalid {
+  outline: 2px solid var(--error);
+  outline-offset: 2px;
+}
+
+#account-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 5.5rem minmax(0, 1fr) auto;
+  align-items: end;
+  gap: .7rem;
+}
+#account-list label { display: grid; gap: .3rem; font-size: .9rem; font-weight: 650; }
+#account-list input { font-weight: normal; }
+@media (max-width: 650px) {
+  #account-list li { grid-template-columns: minmax(0, 1fr) 5.5rem; }
+  #account-list label:nth-child(3), #account-list button { grid-column: 1 / -1; }
+}
+
+#operations .col-balance { text-align:right; font-variant-numeric:tabular-nums; }
+@media(max-width:540px){#operations .col-balance{width:5.7rem} #operations .col-status{width:6rem}}

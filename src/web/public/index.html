@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>FiscalUTXO · Dossier Bitcoin</title>
+  <title>FiscalUTXO-multi</title>
   <link rel="stylesheet" href="./style.css">
   <script type="module" src="./app.js"></script>
 </head>
 <body>
   <header class="header">
-    <div class="brand"><span class="brand-mark" aria-hidden="true">₿</span><span>FiscalUTXO</span></div>
+    <div class="brand"><span class="brand-mark" aria-hidden="true">₿</span><h1>FiscalUTXO-multi</h1></div>
     <nav aria-label="Dossier"><a href="#imports">Imports</a><a href="#operations">Opérations</a><a href="#resultats">Résultats</a></nav>
     <div class="file-actions">
       <button id="load-demo" type="button" class="secondary">Essayer avec un exemple</button>
@@ -21,56 +21,72 @@
   <p id="status" role="status" aria-live="polite"></p>
   <main id="workspace">
     <div class="intro">
-      <div><h1>Dossier Bitcoin</h1>
+      <p>Préparez l’annexe 2086 et retrouvez les montants à reporter. Les fichiers et les calculs restent sur cet appareil.</p>
         <label>Campagne déclarative<select id="fiscal-year">
           <option value="2025">2026 · opérations 2025</option>
           <option value="2026">2027 · opérations 2026</option>
         </select></label>
-      </div>
-      <p>Préparez l’annexe 2086 et retrouvez les montants à reporter. Les fichiers et les calculs restent sur cet appareil.</p>
     </div>
 
     <section id="imports" aria-labelledby="imports-title">
-      <h2 id="imports-title">Sources et état d’ouverture</h2>
-      <div class="panels">
-        <div>
-          <h3>Importer un fichier</h3>
+      <h2 id="imports-title">1. Plateformes et comptes à vérifier</h2>
+      <form id="source-form" class="source-form" data-kind="platform">
+        <label>Nom de la plateforme<input name="name" maxlength="120" required></label>
+        <button>Ajouter la plateforme</button>
+      </form>
+      <p>Ouvrez chaque fiche pour importer un fichier, indiquer le solde et renseigner le compte pour le 3916-bis.</p>
+      <div id="platform-list"></div>
+    </section>
+
+    <section id="wallets" aria-labelledby="wallets-title">
+      <h2 id="wallets-title">2. Wallets personnels</h2>
+      <form id="wallet-form" class="source-form" data-kind="wallet">
+        <label>Nom du wallet<input name="name" maxlength="120" required></label>
+        <button>Ajouter le wallet</button>
+      </form>
+      <p>Ajoutez les wallets en autoconservation du foyer, puis ouvrez leur fiche pour importer ou préciser le solde.</p>
+      <div id="wallet-list"></div>
+      <div id="import-home">
+        <div id="import-panel" hidden>
+          <h4>Importer un fichier</h4>
           <form id="import-form">
             <label>Format<select name="format"><option value="sparrow">CSV Sparrow</option><option value="generique">CSV générique</option><option value="bundle">Bundle JSON de la CLI</option></select></label>
-            <label>Nom du wallet ou de la plateforme<input name="source" maxlength="120" placeholder="Ex. Sparrow épargne" required></label>
+            <label id="registered-import-label" hidden>Wallet ou plateforme<select id="registered-import" name="sourceId"></select></label>
             <label>Fichier<input name="file" type="file"></label>
             <details class="paste-import">
               <summary>Coller le contenu à la place</summary>
               <label>Contenu du CSV ou du JSON<textarea name="content" rows="5" spellcheck="false" autocapitalize="off"></textarea></label>
             </details>
-            <button>Importer</button>
+            <button id="import-submit">Importer</button>
             <button type="button" class="secondary" id="template">Modèle CSV</button>
           </form>
           <p id="import-status" class="import-status" role="status"></p>
-          <ul id="import-list" class="records"></ul>
         </div>
-        <div>
-          <h3 id="opening-title">Situation à l’ouverture</h3>
-          <form id="opening-form">
-            <label>Solde de tout le foyer en sats<input name="sats" type="number" min="0" step="1" required></label>
-            <label>Prix d’acquisition cumulés en €<input name="acquisitions" inputmode="decimal" required></label>
-            <label>Capital déjà consommé en €<input name="used" inputmode="decimal" required></label>
-            <label>Justificatif ou référence<input name="reference" maxlength="500" required></label>
-            <button>Valider l’état d’ouverture</button>
-          </form>
-        </div>
+        <ul id="import-list" class="records"></ul>
       </div>
     </section>
 
+    <section id="opening" aria-labelledby="opening-title">
+      <h2 id="opening-title">3. Situation à l’ouverture</h2>
+      <p id="opening-breakdown" hidden></p>
+      <form id="opening-form">
+        <label>Solde de tout le foyer en sats<input name="sats" inputmode="numeric" pattern="[0-9 ]+" required></label>
+        <label>Prix d’acquisition cumulés en €<input name="acquisitions" inputmode="decimal" required></label>
+        <label>Capital déjà consommé en €<input name="used" inputmode="decimal" required></label>
+        <label>Justificatif ou référence<input name="reference" maxlength="500" required></label>
+        <button>Valider l’état d’ouverture</button>
+      </form>
+    </section>
+
     <section id="operations" aria-labelledby="operations-title">
-      <div class="heading-row"><h2 id="operations-title">Opérations</h2><button type="button" class="secondary" id="add-operation">Ajouter une opération</button></div>
+      <div class="heading-row"><h2 id="operations-title">4. Opérations à qualifier</h2><button type="button" class="secondary" id="add-operation">Ajouter une opération</button></div>
       <p id="operation-period"></p>
       <p id="operations-empty">Aucune opération à qualifier dans le dossier.</p>
       <div class="table-scroll" id="table-scroll" role="region" aria-label="Tableau des opérations" tabindex="0" hidden>
         <table>
           <thead>
             <tr><th scope="col" class="col-source">Source</th><th scope="col" class="col-label">Label</th>
-              <th scope="col" class="col-date">Date UTC</th><th scope="col" class="col-sats">Sats</th>
+              <th scope="col" class="col-date">Date UTC</th><th scope="col" class="col-sats">Variation (sats)</th><th scope="col" class="col-balance">Solde après (sats)</th>
               <th scope="col" class="col-eur">Estim. EUR</th><th scope="col" class="col-status">Qualification</th></tr>
           </thead>
           <tbody id="operation-list"></tbody>
@@ -88,10 +104,11 @@
           </dl>
           <ul id="row-diagnostics" aria-label="Anomalies d’import" hidden></ul>
           <button type="button" id="apply-label-suggestion" class="secondary" hidden></button>
+          <label id="manual-source-label" hidden>Wallet ou plateforme<select name="sourceId"></select></label>
           <label>Qualification<select name="type" required></select></label>
           <div class="input-grid">
             <label data-field="date">Date et heure UTC<input name="date" type="datetime-local" step="1"></label>
-            <label data-field="sats">Quantité réelle en sats<input name="sats" type="number" min="1" step="1"></label>
+            <label data-field="sats">Quantité réelle en sats<input name="sats" inputmode="numeric" pattern="[0-9 ]*[1-9][0-9 ]*"></label>
             <div id="gross-field">
               <label data-field="gross" id="gross-label"><span>Prix en €</span><input name="gross" inputmode="decimal"><small id="acquisition-estimate-note" hidden>Estimation EUR importée à vérifier avec le justificatif.</small></label>
               <div id="disposal-estimate" hidden>
@@ -105,9 +122,13 @@
           </div>
           <div id="portfolio-estimate" hidden>
             <p id="portfolio-estimate-message" aria-live="polite"></p>
+            <ul id="portfolio-balances" class="portfolio-balances" hidden></ul>
+            <label id="market-price-label" hidden>Cours BTC/EUR à la date de cession
+              <input id="market-price" inputmode="decimal" placeholder="Prix en euros pour 1 BTC">
+            </label>
             <div id="portfolio-estimate-controls" hidden>
-              <label>Autres avoirs Bitcoin du foyer à cette date, en sats
-                <input id="other-holdings" inputmode="numeric" maxlength="16" placeholder="0 si aucun" aria-describedby="portfolio-estimate-help">
+              <label id="other-holdings-label">Autres avoirs Bitcoin du foyer à cette date, en sats
+                <input id="other-holdings" inputmode="numeric" maxlength="21" placeholder="0 si aucun" aria-describedby="portfolio-estimate-help">
               </label>
               <p id="portfolio-estimate-help"><small>Vérifiez que le total couvre tous les wallets et plateformes du foyer. Renseignez le justificatif de la valorisation séparément.</small></p>
               <button id="apply-portfolio-estimate" type="button" class="secondary" disabled>Reprendre l’estimation</button>
@@ -124,14 +145,49 @@
 
     <section id="comptes" aria-labelledby="accounts-title">
       <h2 id="accounts-title">Comptes à déclarer</h2>
-      <p>Renseignez l’entité qui tient le compte. Le pays suit l’entité contractante. Utilisez le code à deux lettres, par exemple FR ou DE.</p>
-      <form id="account-form" class="account-form">
-        <label>Entité<input name="entity" maxlength="500" required></label>
-        <label>Pays<input name="country" pattern="[A-Za-z]{2}" maxlength="2" required></label>
-        <label>Référence du compte<input name="reference" maxlength="200" required></label>
-        <button>Ajouter le compte</button>
-      </form>
+      <p>Pour le 3916-bis, les champs reprennent automatiquement les informations de chaque fiche plateforme. Complétez-y le pays de l’entité et la référence du compte si nécessaire.</p>
+      <p id="account-empty" hidden>Aucun compte à afficher dans ce récapitulatif.</p>
       <ul id="account-list" class="records"></ul>
+      <dialog id="cerfa-dialog" aria-labelledby="cerfa-title"><form id="cerfa-form">
+      <div class="heading-row"><h3 id="cerfa-title">Préparer le 3916-bis · 2026</h3><button type="button" id="cerfa-cancel" class="secondary">Fermer</button></div>
+      <p id="cerfa-account"></p>
+      <h4>Déclarant</h4>
+      <label>Nom de naissance, nom d’usage et prénoms<input name="name" type="text" maxlength="200" required ></label>
+      <label>Date de naissance<input name="birth" type="date" maxlength="200" required ></label>
+      <label>Lieu de naissance<input name="birthplace" type="text" maxlength="200" required ></label>
+      <label>Adresse au 1er janvier (rue, ville et pays)<input name="address" type="text" maxlength="200" required ></label>
+      <h4>Compte en 2025</h4>
+      <label>Numéro du compte ou e-mail utilisé à l’ouverture<input name="reference" type="text" maxlength="200" required ></label>
+      <label>Date d’ouverture<input name="opened" type="date" maxlength="200" required max="2025-12-31"></label>
+      <label>Date de clôture si le compte a été clos en 2025<input name="closed" type="date" maxlength="200"  min="2025-01-01" max="2025-12-31"></label>
+      <label>Organisme gestionnaire dans la liste officielle<select name="provider" required><option value="">Choisir…</option><option value="other">Autre organisme</option><option value="001">001 · Binance</option><option value="002">002 · Bitfinex</option><option value="003">003 · Bitflyer</option><option value="004">004 · Bithumb</option><option value="005">005 · Bitpanda</option><option value="006">006 · Bitstamp</option><option value="007">007 · Bittrex</option><option value="008">008 · Bybit</option><option value="009">009 · Coinbase Exchange</option><option value="010">010 · Coinceck</option><option value="011">011 · Coinone</option><option value="012">012 · Crypto.com</option><option value="013">013 · eToro</option><option value="014">014 · Foris DAX MT</option><option value="015">015 · FTX</option><option value="016">016 · Gate.io</option><option value="017">017 · Gemini</option><option value="018">018 · Huobi Global</option><option value="019">019 · Korbit</option><option value="020">020 · Kraken</option><option value="021">021 · KuCoin</option><option value="022">022 · LBank</option><option value="023">023 · LiteBit</option><option value="024">024 · MEXC</option><option value="025">025 · OKX</option><option value="026">026 · Phemex</option><option value="027">027 · Poloniex</option><option value="028">028 · SwissBorg Solution</option><option value="029">029 · Trade Republic</option><option value="030">030 · XT.com</option></select></label>
+      <div data-cerfa="other">
+      <label>Nom de l’organisme<input name="entity" type="text" maxlength="200" required ></label>
+      <label>Adresse postale de l’organisme (rue et ville)<input name="providerAddress" type="text" maxlength="200" required ></label>
+      <label>Site internet, le cas échéant<input name="url" type="url" maxlength="200"  ></label>
+      </div>
+      <label>Détention du compte<select name="role" required><option value="">Choisir…</option><option value="owner">Titulaire en propre</option><option value="proxy-person">Procuration — titulaire personne physique</option><option value="proxy-company">Procuration — titulaire personne morale</option></select></label>
+      <div data-cerfa="proxy">
+      <label>Nom du titulaire ou raison sociale<input name="holder" type="text" maxlength="200" required ></label>
+      <label>Adresse du titulaire (rue, ville et pays)<input name="holderAddress" type="text" maxlength="200" required ></label>
+      </div><div data-cerfa="proxy-person">
+      <label>Prénoms du titulaire<input name="holderFirst" type="text" maxlength="200" required ></label>
+      <label>Date de naissance du titulaire<input name="holderBirth" type="date" maxlength="200" required ></label>
+      <label>Lieu de naissance du titulaire<input name="holderBirthplace" type="text" maxlength="200" required ></label>
+      </div><div data-cerfa="proxy-company">
+      <label>Forme juridique du titulaire<input name="holderForm" type="text" maxlength="200" required ></label>
+      <label>SIRET du titulaire si activité en France<input name="holderSiret" type="text" maxlength="200"  ></label>
+      </div>
+      <label>Usage du compte<select name="usage" required><option value="">Choisir…</option><option value="personal">Personnel exclusivement</option><option value="professional">Professionnel exclusivement</option><option value="mixed">Mixte personnel et professionnel</option></select></label>
+      <div data-cerfa="business">
+      <label>Désignation de l’entreprise<input name="business" type="text" maxlength="200" required ></label>
+      <label>Code de forme juridique (01 à 10)<input name="legalForm" type="text" maxlength="200" required pattern="0[1-9]|10"></label>
+      <label>Numéro SIRET<input name="siret" type="text" maxlength="200" required pattern="[0-9]{14}"></label>
+      <label>Adresse du lieu d’activité (rue, ville et pays)<input name="office" type="text" maxlength="200" required ></label>
+      </div>
+      <p>Les renseignements complémentaires restent dans cet onglet. Conservez le PDF téléchargé.</p>
+      <p id="cerfa-error" role="alert"></p><button>Télécharger le CERFA à imprimer</button>
+      </form></dialog>
       <label class="check"><input type="checkbox" id="accounts-reviewed"> <span id="accounts-year"></span></label>
     </section>
 

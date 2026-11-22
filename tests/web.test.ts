@@ -64,7 +64,7 @@ describe('serveur local', () => {
     const page = await fetch(base)
     expect(page.status).toBe(200)
     expect(page.headers.get('cache-control')).toBe('no-store')
-    expect(await page.text()).toContain('Dossier Bitcoin')
+    expect(await page.text()).toContain('FiscalUTXO-multi')
     expect(await (await fetch(base + '/api/new')).json()).toMatchObject({ year: 2025 })
     expect(await (await fetch(base + '/api/demo?year=2026')).json()).toMatchObject({ year: 2026, imports: [{ import: { rowCount: 6 } }] })
     expect((await fetch(base + '/api/new?year=2024')).status).toBe(422)
