@@ -1,6 +1,6 @@
 import { request } from './transport.js'
 import { importedBalanceAfter, walletBalances } from './balances.js'
-import { fiscalPeriod, importedDate, inFiscalPeriod } from './period.js'
+import { fiscalPeriod, sourceRows } from './period.js'
 
 const $ = id => document.getElementById(id)
 const operationForm = $('operation-form')
@@ -93,21 +93,6 @@ function download(blob, filename) {
   anchor.download = filename
   anchor.click()
   setTimeout(() => URL.revokeObjectURL(url), 1000)
-}
-
-function rows() {
-  return project.imports.flatMap(bundle => {
-    const events = new Map(bundle.normalizedEvents.map(event => [event.sourceRef.rawRowId, event]))
-    return bundle.rawRows.map(row => {
-      const event = events.get(row.id)
-      const date = importedDate(row.rawPayload, event?.occurredAt)
-      return {
-        id: row.id, row, event, bundle, date, operation: project.operations[row.id],
-        outsidePeriod: Boolean(date && !inFiscalPeriod(date, project.year)),
-        title: bundle.source.name + ' · ' + bundle.import.fileName + ' · ligne ' + row.rowNumber,
-      }
-    })
-  })
 }
 
 function indicativeCents(event) {
@@ -459,7 +444,7 @@ function renderSources() {
         if (sats.value !== '') {
           const reference = fields.anchorReference.value.trim()
           if (!reference || !fields.anchorDate.value) throw new Error('Indiquez la date et le justificatif du solde.')
-          anchor = { date: new Date(fields.anchorDate.value + 'Z').toISOString(), sats: parseSats(sats.value.replace(/[   ]/g, '')), reference }
+          anchor = { date: new Date(fields.anchorDate.value + 'Z').toISOString(), sats: parseSats(sats.value), reference }
         }
         saveAccount()
         if (!balance.assumesZero && !source.anchor && anchor?.sats === automatic && anchor.date === start && anchor.reference === autoReference) anchor = undefined
@@ -611,7 +596,7 @@ function render(blockedRows = new Set()) {
     return item
   })
   $('import-list').replaceChildren(...importNodes)
-  const imported = rows()
+  const imported = sourceRows(project)
   const activeRows = imported.filter(entry => !entry.outsidePeriod)
   const outside = imported.length - activeRows.length
   $('operation-period').textContent = 'Du 1er janvier au 31 décembre ' + project.year + ' (heure de Paris).' +
@@ -823,7 +808,7 @@ function updateOperationFields(selectedPeer) {
   $('gross-label').querySelector('span').textContent = type === 'achat' ? 'Prix d’acquisition justifié en €' : 'Prix de cession avant frais en €'
   $('peer-label').textContent = type === 'paiement' ? 'Transfert lié si paiement de frais réseau' : 'Autre ligne du transfert ou original du doublon'
   const txid = selection?.event?.txid ?? selection?.row?.rawPayload.Txid
-  const candidates = rows().filter(item => !item.outsidePeriod && item.id !== selection?.id)
+  const candidates = sourceRows(project).filter(item => !item.outsidePeriod && item.id !== selection?.id)
   const linked = item => txid && item.event?.txid?.toLowerCase() === txid.toLowerCase()
   candidates.sort((a, b) => Number(Boolean(linked(b))) - Number(Boolean(linked(a))))
   fields.peer.replaceChildren(new Option('Choisir une ligne', ''),
@@ -866,7 +851,7 @@ $('opening-form').addEventListener('submit', event => {
     const acquisitions = parseEuros(data.get('acquisitions'))
     const used = parseEuros(data.get('used'))
     if (used > acquisitions) throw new Error('Le capital consommé doit rester inférieur ou égal aux acquisitions.')
-    const sats = parseSats(data.get('sats').replace(/[   ]/g, ''))
+    const sats = parseSats(data.get('sats'))
     if (!sats && acquisitions !== used) throw new Error('Un solde nul doit avoir un capital restant nul.')
     const reference = data.get('reference').trim()
     if (!reference) throw new Error('Ajoutez un justificatif.')
@@ -1029,8 +1014,9 @@ $('calculate').addEventListener('click', () => void task(async () => {
   panel.classList.toggle('pending', !ready)
   if (!ready) {
     const list = element('ul')
+    const byId = new Map(sourceRows(project).map(row => [row.id, row]))
     for (const blocker of result.blockers) {
-      const entry = rows().find(row => row.id === blocker.id)
+      const entry = byId.get(blocker.id)
       list.append(element('li', blocker.message + (entry ? ' · ' + entry.title : '')))
     }
     panel.append(list)

@@ -1,3 +1,5 @@
+import type { Project } from './project.js'
+
 // Midnight in mainland France on 1 January is 23:00 UTC on 31 December.
 export function fiscalPeriod(year: number) {
   return {
@@ -25,4 +27,19 @@ export function importedDate(payload: Record<string, string>, occurredAt?: strin
   // Older Sparrow bundles used 1970-01-01 for undated transactions.
   const eventDate = occurredAt?.startsWith('1970-01-01') ? undefined : utcDate(occurredAt ?? undefined)
   return eventDate ?? utcDate(payload['Date (UTC)']) ?? utcDate(payload.date_utc)
+}
+
+export function sourceRows(project: Project) {
+  return project.imports.flatMap(bundle => {
+    const events = new Map(bundle.normalizedEvents.map(event => [event.sourceRef.rawRowId, event]))
+    return bundle.rawRows.map(row => {
+      const event = events.get(row.id)
+      const date = importedDate(row.rawPayload, event?.occurredAt)
+      return {
+        id: row.id, row, event, bundle, date, operation: project.operations[row.id],
+        outsidePeriod: Boolean(date && !inFiscalPeriod(date, project.year)),
+        title: bundle.source.name + ' · ' + bundle.import.fileName + ' · ligne ' + row.rowNumber,
+      }
+    })
+  })
 }

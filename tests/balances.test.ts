@@ -60,6 +60,33 @@ describe('soldes par source', () => {
     expect(calculate(saved)).toMatchObject({ ready: true, remainingSats: 1_100_000, report: { '3AN': 16_000 } })
   })
 
+  it('regroupe trois sources et réserve le 3916-bis au compte étranger', () => {
+    const { project, out, incoming, disposal } = scenario()
+    const name = 'plateforme-etrangere-audit.csv'
+    project.sources.push({ id: 'de', name: 'Plateforme DE', kind: 'platform', coverage: true })
+    project.accounts.push({ sourceId: 'de', entity: 'Plateforme DE', country: 'DE', reference: 'DE-FICTIF-0001', relevant: true })
+    const content = readFileSync(new URL('../samples/' + name, import.meta.url), 'utf8')
+    const imported = ingest({ project, content, format: 'generique', name, source: 'Plateforme DE', sourceId: 'de' }).project
+    const purchase = imported.imports.at(-1)!.rawRows[0]!.id
+    imported.operations[purchase] = {
+      rowId: purchase, type: 'achat', date: '2025-01-10T10:00:00Z', sats: 500_000, gross: 40_000, reference: 'Achat fictif allemand',
+    }
+    imported.operations[out] = { rowId: out, type: 'transfert', peer: incoming, date: transferDate, sats: 500_000, reference: 'Retrait fictif' }
+    imported.operations[incoming] = { ...imported.operations[out], rowId: incoming, peer: out }
+    expect(walletBalances(imported, start).sats).toBe(1_500_000)
+    expect(walletBalances(imported, disposalDate, disposal).sats).toBe(2_000_000)
+    imported.operations[disposal] = {
+      rowId: disposal, type: 'vente', date: disposalDate, sats: 400_000, gross: 40_000, fee: 0, portfolio: 200_000,
+      reference: 'Vente fictive', valuationReference: '100 000 EUR/BTC',
+    }
+    const result = calculate(projectSchema.parse(imported))
+    expect(result).toMatchObject({
+      ready: true, remainingSats: 1_600_000, capitalRemaining: 104_000, report: { '3AN': 14_000 },
+      disposals: [{ fraction: 26_000, portfolio: 200_000, acquisitions: 130_000 }],
+    })
+    expect(result.foreignAccounts.map(account => account.reference)).toEqual(['DE-FICTIF-0001'])
+  })
+
   it('remonte depuis un solde de référence ultérieur et refuse une source sans couverture ou solde', () => {
     const { project } = scenario()
     const platform = project.sources[0]!

@@ -1,6 +1,6 @@
 import type { Operation, Project } from './project.js'
 import { walletBalances } from './balances.js'
-import { fiscalPeriod, importedDate, inFiscalPeriod } from './period.js'
+import { fiscalPeriod, sourceRows, inFiscalPeriod } from './period.js'
 
 const PRECISION = 100_000_000n
 const THRESHOLD = 30_500n
@@ -9,14 +9,7 @@ const sale = (item: Operation) => item.type === 'vente' || item.type === 'paieme
 const cent = (amount: bigint) =>
   Number(amount < 0n ? -((-amount + PRECISION / 2n) / PRECISION) : (amount + PRECISION / 2n) / PRECISION)
 
-export function sourceRows(project: Project) {
-  return project.imports.flatMap(bundle => {
-    const byRow = new Map(bundle.normalizedEvents.map(event => [event.sourceRef.rawRowId, event]))
-    return bundle.rawRows.map(row => ({
-      row, bundle, event: byRow.get(row.id), operation: project.operations[row.id],
-    }))
-  })
-}
+export { sourceRows } from './period.js'
 
 export function calculate(project: Project) {
   const blockers: { id?: string; message: string }[] = []
@@ -42,10 +35,7 @@ export function calculate(project: Project) {
       block('Un solde d’ouverture nul doit avoir un capital restant nul.')
     }
   }
-  const outsideRows = new Set(rows.filter(item => {
-    const date = importedDate(item.row.rawPayload, item.event?.occurredAt)
-    return date && !inFiscalPeriod(date, project.year)
-  }).map(item => item.row.id))
+  const outsideRows = new Set(rows.filter(item => item.outsidePeriod).map(item => item.id))
   const byRow = new Map(rows.filter(item => !outsideRows.has(item.row.id)).map(item => [item.row.id, item]))
   const activeKeys = new Set<string>()
   const exactDuplicates = new Map<string, string>()
@@ -84,7 +74,7 @@ export function calculate(project: Project) {
       continue
     }
     if (operation.type === 'historique' || operation.type === 'post_cloture') {
-      const rawDate = item && importedDate(item.row.rawPayload, item.event?.occurredAt)
+      const rawDate = item?.date
       const inHistoricalPeriod = (value: string) => Date.parse(value) < Date.parse(start)
       const afterClosing = (value: string) => Date.parse(value) >= Date.parse(end)
       const inPeriod = operation.type === 'historique' ? inHistoricalPeriod : afterClosing
