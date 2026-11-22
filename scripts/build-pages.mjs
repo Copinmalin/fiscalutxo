@@ -1,4 +1,5 @@
 import { mkdir, readFile, writeFile, copyFile } from 'node:fs/promises'
+import { createHash } from 'node:crypto'
 import { resolve } from 'node:path'
 import { build } from 'esbuild'
 
@@ -26,6 +27,7 @@ await build({
 })
 
 const page = await readFile(source + '/index.html', 'utf8')
+const scriptVersion = createHash('sha256').update(await readFile(output + '/app.js')).digest('hex').slice(0, 12)
 const csp = `default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'`
 const licensePaths = {
   '@noble/hashes': '@noble/hashes/LICENSE',
@@ -41,7 +43,7 @@ const licensePaths = {
 const licenses = await Promise.all(Object.entries(licensePaths).map(async ([name, path]) =>
   name + '\n\n' + await readFile('node_modules/' + path, 'utf8')))
 await Promise.all([
-  writeFile(output + '/index.html', page.replace('<head>', '<head>\n  <meta http-equiv="Content-Security-Policy" content="' + csp + '">')),
+  writeFile(output + '/index.html', page.replace('./app.js', './app.js?v=' + scriptVersion).replace('<head>', '<head>\n  <meta http-equiv="Content-Security-Policy" content="' + csp + '">')),
   copyFile(source + '/style.css', output + '/style.css'),
   writeFile(output + '/.nojekyll', ''),
   writeFile(output + '/THIRD-PARTY-NOTICES.txt', licenses.join('\n\n')),

@@ -340,21 +340,23 @@ function renderSources() {
     addField('anchorDate', 'Date et heure UTC du solde de référence', 'datetime-local',
       (source.anchor?.date ?? start).slice(0, 19)).step = '1'
     const sats = addField('anchorSats', 'Solde en sats au début de cet instant', 'text',
-      source.anchor?.sats.toLocaleString('fr-FR') ?? '')
+      source.anchor?.sats.toLocaleString('fr-FR').replace(/ /g, ' ') ?? '')
     sats.inputMode = 'numeric'
-    sats.pattern = '[0-9]{1,3}( [0-9]{3})*'
-    sats.addEventListener('input', () => {
+    sats.pattern = '[0-9]+|[0-9]{1,3}([   ][0-9]{3})+'
+    function formatBalance() {
       const raw = sats.value
       const digits = raw.replace(/[   ]/g, '')
       if (!/^\d+$/.test(digits)) return
       const remaining = raw.slice(sats.selectionStart).replace(/[   ]/g, '').length
-      sats.value = digits.replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
+      sats.value = digits.replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
       let caret = sats.value.length
       for (let count = 0; count < remaining && caret > 0;) {
-        if (sats.value[--caret] !== ' ') count++
+        if (sats.value[--caret] !== ' ') count++
       }
       sats.setSelectionRange(caret, caret)
-    })
+    }
+    sats.addEventListener('input', formatBalance)
+    sats.addEventListener('change', formatBalance)
     addField('anchorReference', 'Justificatif du solde de référence', 'text', source.anchor?.reference ?? '').maxLength = 500
     form.append(element('small', 'Laissez le solde vide si Sparrow fournit un solde cumulé exploitable. ' +
       'Sans fichier, indiquez le solde au 1er janvier et saisissez les mouvements un par un.'))
@@ -469,7 +471,7 @@ function renderSources() {
         if (sats.value !== '') {
           const reference = fields.anchorReference.value.trim()
           if (!reference || !fields.anchorDate.value) throw new Error('Indiquez la date et le justificatif du solde.')
-          anchor = { date: new Date(fields.anchorDate.value + 'Z').toISOString(), sats: parseSats(sats.value.replace(/ /g, '')), reference }
+          anchor = { date: new Date(fields.anchorDate.value + 'Z').toISOString(), sats: parseSats(sats.value.replace(/[   ]/g, '')), reference }
         }
         saveAccount()
         if (anchor) source.anchor = anchor
