@@ -13,6 +13,7 @@ function scenario() {
   let project: Project = {
     ...emptyProject(), complete: true, accountsReviewed: true,
     opening: { sats: 0, acquisitions: 90_000, used: 0, reference: 'Capital fictif', confirmed: true },
+    accounts: [{ sourceId: 'platform', entity: 'Plateforme fictive', country: 'FR', reference: '', relevant: true }],
     sources: [
       { id: 'platform', name: 'Plateforme fictive', kind: 'platform', coverage: true,
         anchor: { date: start, sats: 1_200_000, reference: 'Relevé fictif' } },
@@ -50,6 +51,12 @@ describe('soldes par source', () => {
       fee: 0, reference: 'Vente fictive', valuationReference: 'Cours fictif Sparrow',
     }
     const saved = projectSchema.parse(JSON.parse(JSON.stringify(project)))
+    expect(calculate(saved).foreignAccounts).toEqual([])
+    const account = saved.accounts[0]!
+    account.country = 'DE'
+    expect(calculate(saved).ready).toBe(false)
+    account.reference = 'Référence fictive'
+    expect(calculate(saved).foreignAccounts).toEqual([account])
     expect(calculate(saved)).toMatchObject({ ready: true, remainingSats: 1_100_000, report: { '3AN': 16_000 } })
   })
 

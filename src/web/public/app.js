@@ -20,6 +20,7 @@ const statuses = { imported: 'Importé', partial: 'À vérifier', failed: 'Éche
 const currency = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' })
 const money = cents => currency.format(cents / 100)
 let project
+let activeImportId = ''
 let dirty = false
 let busy = false
 let selection = null
@@ -261,31 +262,35 @@ function suggestedQualification(entry) {
   return null
 }
 
-function sourceOptions() {
-  return [new Option('Choisir une source', ''), ...project.sources.map(source => new Option(source.name, source.id))]
+function sourceOptions(sources = project.sources) {
+  return [new Option('Choisir une source', ''), ...sources.map(source => new Option(source.name, source.id))]
+}
+
+function importSources() {
+  if (project.sources.length) return project.sources
+  return [...new Map(project.imports.map(bundle => [bundle.source.id, bundle.source])).values()]
 }
 
 function renderSources() {
   const sources = project.sources
   const start = fiscalPeriod(project.year).start
   const opening = sources.length ? walletBalances(project, start) : null
+  const panel = $('import-panel')
+  $('import-home').prepend(panel)
+  const destinations = importSources()
+  if (!sources.some(source => source.id === activeImportId)) activeImportId = ''
   const importSelection = $('registered-import')
-  const selected = importSelection.value
-  importSelection.replaceChildren(...sourceOptions())
-  importSelection.value = sources.some(source => source.id === selected) ? selected : sources.length === 1 ? sources[0].id : ''
-  importSelection.disabled = !sources.length
-  importSelection.required = !!sources.length
-  $('registered-import-label').hidden = !sources.length
-  const legacyImport = $('import-form').elements.source
-  const legacy = !sources.length && project.imports.length > 0
-  legacyImport.disabled = !legacy
-  $('legacy-import-label').hidden = !legacy
-  $('import-submit').disabled = !sources.length && !legacy
-  $('source-guide').textContent = sources.length
-    ? 'Après les imports ou saisies manuelles, confirmez la couverture de chaque source.'
-    : 'Ajoutez chaque wallet et plateforme, puis chargez les fichiers associés.'
-  const expanded = new Set(Array.from($('source-list').querySelectorAll('details[open]'), item => item.dataset.source))
-  $('source-list').replaceChildren(...sources.map((source, index) => {
+  const selected = activeImportId || importSelection.value
+  importSelection.replaceChildren(...sourceOptions(destinations))
+  importSelection.value = destinations.some(source => source.id === selected) ? selected :
+    destinations.length === 1 ? destinations[0].id : ''
+  importSelection.disabled = !destinations.length
+  importSelection.required = !!destinations.length
+  $('registered-import-label').hidden = !!sources.length || !destinations.length
+  $('import-submit').disabled = !destinations.length
+  panel.hidden = !!sources.length || !destinations.length
+  const expanded = new Set(Array.from(document.querySelectorAll('.source-card[open]'), item => item.dataset.source))
+  const cards = sources.map((source, index) => {
     const group = element('details', undefined, 'source-card')
     group.dataset.source = source.id
     group.open = expanded.has(source.id)
@@ -295,6 +300,25 @@ function renderSources() {
     group.append(element('summary', source.name + ' · ' + label + ' · ' + count + ' fichier(s) · ' +
       (balance.sats === null ? balance.reason : 'Ouverture : ' + balance.sats.toLocaleString('fr-FR') + ' sats' +
         (balance.automatic ? ' (reconstituée)' : ''))))
+    const panelHost = element('div')
+    const importButton = button('Importer un fichier pour cette source', () => {
+      if (activeImportId !== source.id) {
+        $('import-form').reset()
+        $('import-form').elements.format.value = source.kind === 'platform' ? 'generique' : 'sparrow'
+        status('', false, 'import-status')
+      }
+      activeImportId = source.id
+      importSelection.value = source.id
+      panelHost.append(panel)
+      panel.hidden = false
+      $('import-form').elements.file.focus()
+    })
+    importButton.classList.add('source-import-button')
+    group.append(importButton, panelHost)
+    if (activeImportId === source.id) {
+      panelHost.append(panel)
+      panel.hidden = false
+    }
     const form = element('form', undefined, 'source-card-form')
     const addField = (name, title, type, value) => {
       const input = element('input')
@@ -306,6 +330,7 @@ function renderSources() {
       form.append(label)
       return input
     }
+    form.append(element('h4', 'Solde de référence'))
     addField('anchorDate', 'Date et heure UTC du solde de référence', 'datetime-local',
       (source.anchor?.date ?? start).slice(0, 19)).step = '1'
     const sats = addField('anchorSats', 'Solde en sats au début de cet instant', 'number', source.anchor?.sats ?? '')
@@ -320,11 +345,43 @@ function renderSources() {
     const confirmation = element('label', undefined, 'check')
     confirmation.append(coverage, element('span', 'J’ai recensé tous les mouvements de cette source entre le solde de référence, le début de l’année et la dernière cession à traiter.'))
     form.append(confirmation)
+    const currentAccount = project.accounts.find(account => account.sourceId === source.id)
+    const oldAccounts = project.accounts.filter(account => !account.sourceId)
+    let legacyAccount
+    if (source.kind === 'platform') {
+      const section = element('h4', 'Compte de la plateforme')
+      form.append(section)
+      if (oldAccounts.length && !currentAccount) {
+        legacyAccount = element('select')
+        const label = element('label', 'Compte déjà saisi dans ce dossier')
+        legacyAccount.append(new Option('Choisir si applicable', ''), ...oldAccounts.map((account, index) =>
+          new Option([account.entity, account.country, account.reference].filter(Boolean).join(' · '), String(index))))
+        label.append(legacyAccount)
+        form.append(label)
+      }
+      const entity = addField('entity', 'Entité qui tient le compte', 'text', currentAccount?.entity ?? source.name)
+      entity.maxLength = 500
+      const country = addField('country', 'Pays de l’entité (FR, DE…)', 'text', currentAccount?.country ?? '')
+      country.maxLength = 2
+      country.pattern = '[A-Za-z]{2}'
+      addField('accountReference', 'Référence du compte étranger', 'text', currentAccount?.reference ?? '').maxLength = 200
+      if (legacyAccount) legacyAccount.addEventListener('change', () => {
+        const account = legacyAccount.value === '' ? undefined : oldAccounts[Number(legacyAccount.value)]
+        entity.value = account?.entity ?? source.name
+        country.value = account?.country ?? ''
+        form.elements.accountReference.value = account?.reference ?? ''
+      })
+    }
     const save = element('button', 'Valider cette source')
     form.append(save)
     const linked = count || Object.values(project.operations).some(operation => operation.sourceId === source.id)
     if (!linked) form.append(button('Retirer cette source', () => {
       project.sources = project.sources.filter(item => item.id !== source.id)
+      if (currentAccount) {
+        // A platform can have a reporting obligation even when it has no imported transactions.
+        delete currentAccount.sourceId
+      }
+      project.accountsReviewed = false
       project.complete = false
       changed('Source retirée.')
     }))
@@ -332,12 +389,34 @@ function renderSources() {
       event.preventDefault()
       const fields = form.elements
       try {
-        if (sats.value === '') delete source.anchor
-        else {
+        let anchor
+        if (sats.value !== '') {
           const reference = fields.anchorReference.value.trim()
           if (!reference || !fields.anchorDate.value) throw new Error('Indiquez la date et le justificatif du solde.')
-          source.anchor = { date: new Date(fields.anchorDate.value + 'Z').toISOString(), sats: parseSats(sats.value), reference }
+          anchor = { date: new Date(fields.anchorDate.value + 'Z').toISOString(), sats: parseSats(sats.value), reference }
         }
+        if (source.kind === 'platform') {
+          const country = fields.country.value.trim().toUpperCase()
+          const entity = fields.entity.value.trim() || source.name
+          const accountReference = fields.accountReference.value.trim()
+          if (!country && (accountReference || legacyAccount?.value)) throw new Error('Renseignez le pays de l’entité.')
+          const previous = currentAccount ?? (legacyAccount?.value ? oldAccounts[Number(legacyAccount.value)] :
+            oldAccounts.find(account => account.entity === entity && account.country === country &&
+              account.reference === accountReference))
+          if (country && !/^[A-Z]{2}$/.test(country)) throw new Error('Utilisez un code pays de deux lettres.')
+          if (country) {
+            const next = { sourceId: source.id, entity, country, reference: accountReference, relevant: previous?.relevant ?? true }
+            const updated = !previous || Object.keys(next).some(key => next[key] !== previous[key])
+            if (previous) Object.assign(previous, next)
+            else project.accounts.push(next)
+            if (updated) project.accountsReviewed = false
+          } else if (currentAccount) {
+            project.accounts = project.accounts.filter(account => account !== currentAccount)
+            project.accountsReviewed = false
+          }
+        }
+        if (anchor) source.anchor = anchor
+        else delete source.anchor
         source.coverage = coverage.checked
         changed('Source mise à jour.')
       } catch (error) {
@@ -345,8 +424,10 @@ function renderSources() {
       }
     })
     group.append(form)
-    return group
-  }))
+    return { group, kind: source.kind }
+  })
+  $('platform-list').replaceChildren(...cards.filter(card => card.kind === 'platform').map(card => card.group))
+  $('wallet-list').replaceChildren(...cards.filter(card => card.kind === 'wallet').map(card => card.group))
   const fields = $('opening-form').elements
   fields.sats.readOnly = !!opening
   if (opening) fields.sats.value = opening.sats ?? ''
@@ -359,7 +440,7 @@ function renderSources() {
 
 function render(blockedRows = new Set()) {
   $('fiscal-year').value = project.year
-  $('opening-title').textContent = 'Situation au 1er janvier ' + project.year
+  $('opening-title').textContent = '3. Situation au 1er janvier ' + project.year
   renderSources()
   $('accounts-year').textContent = 'J’ai vérifié les comptes ouverts, détenus, utilisés ou clos en ' + project.year + '.'
   const importNodes = project.imports.map(bundle => {
@@ -430,18 +511,22 @@ function render(blockedRows = new Set()) {
     operationsTable.append(tr)
   }
   $('operation-list').replaceChildren(operationsTable)
-  $('account-list').replaceChildren(...project.accounts.map((account, index) => {
-    const item = element('li')
-    const foreign = account.relevant && account.country !== 'FR'
-    item.append(element('span', account.entity + ' · ' + account.country + ' · ' + account.reference +
-      (foreign ? ' · À renseigner au 3916-bis' : '')),
-    button('Retirer', () => {
-      project.accounts.splice(index, 1)
-      project.accountsReviewed = false
-      changed('Compte retiré du dossier ouvert.')
-    }))
-    return item
-  }))
+  const foreignAccounts = project.accounts.filter(account => account.relevant && account.country !== 'FR')
+  const missingPlatforms = project.sources.filter(source => source.kind === 'platform' &&
+    !project.accounts.some(account => account.sourceId === source.id))
+  $('account-empty').hidden = !!(foreignAccounts.length || missingPlatforms.length)
+  $('account-list').replaceChildren(
+    ...missingPlatforms.map(source => element('li', source.name + ' · Pays du compte à renseigner dans la fiche de la plateforme')),
+    ...foreignAccounts.map(account => {
+      const item = element('li', account.entity + ' · ' + account.country + ' · ' + (account.reference || 'Référence à préciser'))
+      if (!account.sourceId) item.append(button('Retirer', () => {
+        project.accounts = project.accounts.filter(value => value !== account)
+        project.accountsReviewed = false
+        changed('Compte retiré du dossier ouvert.')
+      }))
+      return item
+    }),
+  )
   $('complete').checked = project.complete
   $('accounts-reviewed').checked = project.accountsReviewed
   for (const node of document.querySelectorAll('[data-format]')) node.disabled = !ready
@@ -588,21 +673,24 @@ function updateOperationFields(selectedPeer) {
   updatePortfolioEstimate()
 }
 
-$('source-form').addEventListener('submit', event => {
+for (const sourceForm of document.querySelectorAll('.source-form')) sourceForm.addEventListener('submit', event => {
   event.preventDefault()
   const form = event.currentTarget
   const name = form.elements.name.value.trim()
-  const kind = form.elements.kind.value
+  const kind = form.dataset.kind
   if (!name || project.sources.some(source => source.kind === kind && source.name.toLowerCase() === name.toLowerCase())) {
     status('Renseignez un nom de source distinct.', true)
     return
   }
   const existing = project.imports.find(bundle => bundle.source.sourceType === kind &&
     bundle.source.name.toLowerCase() === name.toLowerCase())
-  project.sources.push({ id: existing?.source.id ?? 'source:' + crypto.randomUUID(), name, kind, coverage: false })
+  const source = { id: existing?.source.id ?? 'source:' + crypto.randomUUID(), name, kind, coverage: false }
+  project.sources.push(source)
+  if (kind === 'platform') project.accountsReviewed = false
   project.complete = false
   form.reset()
   changed('Source ajoutée. Importez son historique ou renseignez son solde.')
+  document.querySelector('.source-card[data-source="' + CSS.escape(source.id) + '"]').open = true
 })
 
 $('opening-form').addEventListener('submit', event => {
@@ -636,11 +724,10 @@ $('import-form').addEventListener('submit', event => {
     const format = data.get('format')
     const content = hasPaste ? pasted : await readImportFile(file)
     if (!content.trim()) throw new Error('Le fichier sélectionné est vide.')
-    const registered = project.sources.find(source => source.id === data.get('sourceId'))
-    const source = registered?.name ?? data.get('source')?.trim()
-    if (!source) throw new Error('Déclarez et sélectionnez une source.')
+    const destination = importSources().find(source => source.id === (activeImportId || data.get('sourceId')))
+    if (!destination) throw new Error('Déclarez et sélectionnez une source.')
     const response = await request('import', {
-      project, format, source, ...(registered ? { sourceId: registered.id } : {}),
+      project, format, source: destination.name, sourceId: destination.id,
       name: hasPaste ? (format === 'bundle' ? 'import-collé.json' : 'import-collé.csv') : file.name,
       content,
     })
@@ -649,11 +736,13 @@ $('import-form').addEventListener('submit', event => {
       return
     }
     project = response.project
-    const importedSource = project.sources.find(source => source.id === registered?.id)
+    const importedSource = project.sources.find(source => source.id === destination.id)
     if (importedSource) importedSource.coverage = false
     project.complete = false
     project.accountsReviewed = false
+    const selectedFormat = form.elements.format.value
     form.reset()
+    form.elements.format.value = selectedFormat
     form.querySelector('details').open = false
     changed(response.status === 'imported' ? 'Import ajouté. Vérifiez les opérations.' : 'Import conservé. Vérifiez les anomalies.', 'import-status')
   }, 'import-status')
@@ -746,26 +835,6 @@ operationForm.addEventListener('submit', event => {
   }
 })
 
-$('account-form').addEventListener('submit', event => {
-  event.preventDefault()
-  const form = event.currentTarget
-  const data = new FormData(form)
-  const entity = data.get('entity').trim()
-  const reference = data.get('reference').trim()
-  const country = data.get('country').trim().toUpperCase()
-  if (!entity || !reference) {
-    status('Renseignez l’entité et la référence du compte.', true)
-    return
-  }
-  if (project.accounts.some(account => account.entity === entity && account.country === country && account.reference === reference)) {
-    status('Ce compte est déjà renseigné.')
-    return
-  }
-  project.accounts.push({ entity, country, reference, relevant: true })
-  project.accountsReviewed = false
-  form.reset()
-  changed('Compte ajouté.')
-})
 $('accounts-reviewed').addEventListener('change', event => {
   project.accountsReviewed = event.target.checked
   changed('Revue des comptes mise à jour.')

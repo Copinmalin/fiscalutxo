@@ -82,7 +82,7 @@ export const projectSchema = z.object({
   imports: z.array(bundleSchema),
   operations: z.record(key, operationSchema),
   accounts: z.array(z.object({
-    entity: reference, country: z.string().trim().regex(/^[A-Z]{2}$/),
+    sourceId: key.optional(), entity: reference, country: z.string().trim().regex(/^[A-Z]{2}$/),
     reference: z.string().trim().max(200), relevant: z.boolean(),
   })),
   accountsReviewed: z.boolean(),
@@ -94,6 +94,13 @@ export const projectSchema = z.object({
   }
   const sourceIds = new Set(project.sources.map(source => source.id))
   if (sourceIds.size !== project.sources.length) issue('Source déclarée en double')
+  const linkedAccounts = new Set<string>()
+  const platformIds = new Set(project.sources.filter(source => source.kind === 'platform').map(source => source.id))
+  for (const account of project.accounts) {
+    if (!account.sourceId) continue
+    if (!platformIds.has(account.sourceId) || linkedAccounts.has(account.sourceId)) issue('Lien de compte plateforme invalide')
+    linkedAccounts.add(account.sourceId)
+  }
   const fileHashes = new Set<string>()
   const importIds = new Set<string>()
   const rowIds = new Set<string>()
@@ -177,7 +184,11 @@ export const importInputSchema = z.object({
 
 export function ingest({ project, format, content, name, source, sourceId: selectedId }: z.infer<typeof importInputSchema>) {
   const registered = selectedId ? project.sources.find(item => item.id === selectedId) : undefined
-  if (selectedId && !registered) throw new z.ZodError([{ code: 'custom', path: ['sourceId'], message: 'Sélectionnez une source déclarée.' }])
+  const legacy = selectedId && !project.sources.length
+    ? project.imports.find(bundle => bundle.source.id === selectedId)?.source
+    : undefined
+  const target = registered ?? (legacy && { id: legacy.id, name: legacy.name, kind: legacy.sourceType })
+  if (selectedId && !target) throw new z.ZodError([{ code: 'custom', path: ['sourceId'], message: 'Sélectionnez une source déclarée.' }])
   let bundle: Bundle
   if (format === 'bundle') {
     bundle = bundleSchema.parse(JSON.parse(content))
@@ -186,14 +197,14 @@ export function ingest({ project, format, content, name, source, sourceId: selec
         if (event.occurredAt?.startsWith('1970-01-01')) event.occurredAt = null
       }
     }
-    bundle.source.id = registered?.id ?? 'src:' + digest(bundle.source.sourceType + ':' + source.trim().toLowerCase())
-    bundle.source.name = registered?.name ?? source
-    if (registered) bundle.source.sourceType = registered.kind
+    bundle.source.id = target?.id ?? 'src:' + digest(bundle.source.sourceType + ':' + source.trim().toLowerCase())
+    bundle.source.name = target?.name ?? source
+    if (target) bundle.source.sourceType = target.kind
     bundle.import.sourceId = bundle.source.id
     for (const event of bundle.normalizedEvents) event.sourceRef.sourceId = bundle.source.id
   } else {
     const fingerprint = 'sha256:' + digest(content)
-    const sourceId = registered?.id ?? 'src:' + digest((format === 'sparrow' ? 'wallet' : 'platform') + ':' + source.trim().toLowerCase())
+    const sourceId = target?.id ?? 'src:' + digest((format === 'sparrow' ? 'wallet' : 'platform') + ':' + source.trim().toLowerCase())
     const importId = 'imp:' + digest(fingerprint)
     const context = { sourceId, importId }
     const parseResult = format === 'sparrow'
@@ -202,7 +213,7 @@ export function ingest({ project, format, content, name, source, sourceId: selec
     bundle = bundleSchema.parse(createSparrowImportBundle({
       ...context, fileName: name, fileFingerprint: fingerprint, importedAt: new Date().toISOString(),
       parseResult, sourceText: content, source: {
-        id: sourceId, name: registered?.name ?? source, sourceType: registered?.kind ?? (format === 'sparrow' ? 'wallet' : 'platform'),
+        id: sourceId, name: target?.name ?? source, sourceType: target?.kind ?? (format === 'sparrow' ? 'wallet' : 'platform'),
         country: null, isFrenchPlatform: false, requires3916Review: format !== 'sparrow',
       },
     }))

@@ -192,6 +192,11 @@ export function calculate(project: Project) {
     }
   }
 
+  for (const source of project.sources ?? []) {
+    if (source.kind === 'platform' && !project.accounts.some(account => account.sourceId === source.id)) {
+      block(source.name + ' · Renseignez le pays de l’entité qui tient le compte.')
+    }
+  }
   if (project.accounts.some(account => account.relevant && account.country !== 'FR' && !account.reference)) {
     block('Renseignez la référence de chaque compte étranger concerné.')
   }

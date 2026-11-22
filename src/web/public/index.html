@@ -31,22 +31,29 @@
     </div>
 
     <section id="imports" aria-labelledby="imports-title">
-      <h2 id="imports-title">Sources et état d’ouverture</h2>
-      <h3>1. Lister les wallets et plateformes du foyer</h3>
-      <form id="source-form" class="source-form">
-        <label>Nom de la source<input name="name" maxlength="120" required></label>
-        <label>Type de source<select name="kind"><option value="wallet">Wallet</option><option value="platform">Plateforme</option></select></label>
-        <button>Ajouter la source</button>
+      <h2 id="imports-title">1. Plateformes et comptes à vérifier</h2>
+      <form id="source-form" class="source-form" data-kind="platform">
+        <label>Nom de la plateforme<input name="name" maxlength="120" required></label>
+        <button>Ajouter la plateforme</button>
       </form>
-      <p id="source-guide">Ajoutez chaque wallet et plateforme, puis chargez les fichiers associés. Une source sans fichier peut être renseignée manuellement.</p>
-      <div id="source-list"></div>
-      <div class="panels">
-        <div>
-          <h3>2. Importer un fichier</h3>
+      <p>Ouvrez chaque fiche pour importer un fichier, indiquer le solde et renseigner le compte pour le 3916-bis.</p>
+      <div id="platform-list"></div>
+    </section>
+
+    <section id="wallets" aria-labelledby="wallets-title">
+      <h2 id="wallets-title">2. Wallets personnels</h2>
+      <form id="wallet-form" class="source-form" data-kind="wallet">
+        <label>Nom du wallet<input name="name" maxlength="120" required></label>
+        <button>Ajouter le wallet</button>
+      </form>
+      <p>Ajoutez les wallets en autoconservation du foyer, puis ouvrez leur fiche pour importer ou préciser le solde.</p>
+      <div id="wallet-list"></div>
+      <div id="import-home">
+        <div id="import-panel" hidden>
+          <h4>Importer un fichier</h4>
           <form id="import-form">
             <label>Format<select name="format"><option value="sparrow">CSV Sparrow</option><option value="generique">CSV générique</option><option value="bundle">Bundle JSON de la CLI</option></select></label>
             <label id="registered-import-label" hidden>Wallet ou plateforme<select id="registered-import" name="sourceId"></select></label>
-            <label id="legacy-import-label" hidden>Nom du wallet ou de la plateforme<input name="source" maxlength="120" placeholder="Ex. Sparrow épargne" required></label>
             <label>Fichier<input name="file" type="file"></label>
             <details class="paste-import">
               <summary>Coller le contenu à la place</summary>
@@ -56,24 +63,25 @@
             <button type="button" class="secondary" id="template">Modèle CSV</button>
           </form>
           <p id="import-status" class="import-status" role="status"></p>
-          <ul id="import-list" class="records"></ul>
         </div>
-        <div>
-          <h3 id="opening-title">3. Situation à l’ouverture</h3>
-          <p id="opening-breakdown" hidden></p>
-          <form id="opening-form">
-            <label>Solde de tout le foyer en sats<input name="sats" type="number" min="0" step="1" required></label>
-            <label>Prix d’acquisition cumulés en €<input name="acquisitions" inputmode="decimal" required></label>
-            <label>Capital déjà consommé en €<input name="used" inputmode="decimal" required></label>
-            <label>Justificatif ou référence<input name="reference" maxlength="500" required></label>
-            <button>Valider l’état d’ouverture</button>
-          </form>
-        </div>
+        <ul id="import-list" class="records"></ul>
       </div>
     </section>
 
+    <section id="opening" aria-labelledby="opening-title">
+      <h2 id="opening-title">3. Situation à l’ouverture</h2>
+      <p id="opening-breakdown" hidden></p>
+      <form id="opening-form">
+        <label>Solde de tout le foyer en sats<input name="sats" type="number" min="0" step="1" required></label>
+        <label>Prix d’acquisition cumulés en €<input name="acquisitions" inputmode="decimal" required></label>
+        <label>Capital déjà consommé en €<input name="used" inputmode="decimal" required></label>
+        <label>Justificatif ou référence<input name="reference" maxlength="500" required></label>
+        <button>Valider l’état d’ouverture</button>
+      </form>
+    </section>
+
     <section id="operations" aria-labelledby="operations-title">
-      <div class="heading-row"><h2 id="operations-title">Opérations</h2><button type="button" class="secondary" id="add-operation">Ajouter une opération</button></div>
+      <div class="heading-row"><h2 id="operations-title">4. Opérations à qualifier</h2><button type="button" class="secondary" id="add-operation">Ajouter une opération</button></div>
       <p id="operation-period"></p>
       <p id="operations-empty">Aucune opération à qualifier dans le dossier.</p>
       <div class="table-scroll" id="table-scroll" role="region" aria-label="Tableau des opérations" tabindex="0" hidden>
@@ -138,14 +146,9 @@
     </section>
 
     <section id="comptes" aria-labelledby="accounts-title">
-      <h2 id="accounts-title">Comptes à déclarer</h2>
-      <p>Renseignez l’entité qui tient le compte. Le pays suit l’entité contractante. Utilisez le code à deux lettres, par exemple FR ou DE.</p>
-      <form id="account-form" class="account-form">
-        <label>Entité<input name="entity" maxlength="500" required></label>
-        <label>Pays<input name="country" pattern="[A-Za-z]{2}" maxlength="2" required></label>
-        <label>Référence du compte<input name="reference" maxlength="200" required></label>
-        <button>Ajouter le compte</button>
-      </form>
+      <h2 id="accounts-title">Récapitulatif 3916-bis</h2>
+      <p>Les informations des comptes se renseignent dans la fiche de chaque plateforme.</p>
+      <p id="account-empty" hidden>Aucun compte à déclarer parmi les informations renseignées.</p>
       <ul id="account-list" class="records"></ul>
       <label class="check"><input type="checkbox" id="accounts-reviewed"> <span id="accounts-year"></span></label>
     </section>
