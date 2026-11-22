@@ -119,3 +119,16 @@ dialog .input-grid{gap:0 1rem}
   outline: 2px solid var(--error);
   outline-offset: 2px;
 }
+
+#account-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 5.5rem minmax(0, 1fr) auto;
+  align-items: end;
+  gap: .7rem;
+}
+#account-list label { display: grid; gap: .3rem; font-size: .9rem; font-weight: 650; }
+#account-list input { font-weight: normal; }
+@media (max-width: 650px) {
+  #account-list li { grid-template-columns: minmax(0, 1fr) 5.5rem; }
+  #account-list label:nth-child(3), #account-list button { grid-column: 1 / -1; }
+}
