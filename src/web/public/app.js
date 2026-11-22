@@ -1,4 +1,5 @@
 import { request } from './transport.js'
+import { importedBalanceAfter, walletBalances } from './balances.js'
 import { fiscalPeriod, importedDate, inFiscalPeriod } from './period.js'
 
 const $ = id => document.getElementById(id)
@@ -145,28 +146,27 @@ function updateDisposalEstimate() {
 }
 
 function importedWalletBalanceBefore(entry) {
-  for (const [header, raw] of Object.entries(entry.row.rawPayload)) {
-    const unit = /^Balance \((BTC|sats?)\)$/i.exec(header)?.[1].toLowerCase()
-    if (!unit) continue
-    const value = raw.trim()
-    const match = (unit === 'btc' ? /^(\d+)(?:[.,](\d{1,8}))?$/ : /^(\d+)$/).exec(value)
-    if (!match) return null
-    const balanceAfter = BigInt(unit === 'btc' ? match[1] + (match[2] ?? '').padEnd(8, '0') : match[1])
-    const balanceBefore = balanceAfter + BigInt(entry.event.quantitySats)
-    return balanceBefore <= 2_100_000_000_000_000n ? balanceBefore : null
-  }
-  return null
+  const balanceAfter = importedBalanceAfter(entry.row.rawPayload)
+  if (balanceAfter === null) return null
+  const balanceBefore = balanceAfter + BigInt(entry.event.quantitySats)
+  return balanceBefore <= 2_100_000_000_000_000n ? balanceBefore : null
 }
 
 function updatePortfolioEstimate() {
   const fields = operationForm.elements
   const isDisposal = fields.type.value === 'vente' || fields.type.value === 'paiement'
   const isSparrow = selection?.bundle?.import.parserName === 'sparrow-transactions-csv'
+  const inventory = project.sources.length > 0
   const panel = $('portfolio-estimate')
-  panel.hidden = !isDisposal || !isSparrow
+  panel.hidden = !isDisposal || (!isSparrow && !inventory)
   if (panel.hidden) return null
 
   const estimate = importedDisposalRate(selection, fields.date.value)
+  if (inventory) return updateInventoryEstimate(estimate)
+  $('portfolio-balances').hidden = true
+  $('market-price-label').hidden = true
+  $('other-holdings-label').hidden = false
+  $('portfolio-estimate-help').textContent = 'Vérifiez que le total couvre tous les wallets et plateformes du foyer. Renseignez le justificatif de la valorisation séparément.'
   const walletSats = estimate ? importedWalletBalanceBefore(selection) : null
   const message = $('portfolio-estimate-message')
   const controls = $('portfolio-estimate-controls')
@@ -192,6 +192,56 @@ function updatePortfolioEstimate() {
   return Number(total)
 }
 
+function updateInventoryEstimate(importedRate) {
+  const fields = operationForm.elements
+  const message = $('portfolio-estimate-message')
+  const balances = $('portfolio-balances')
+  const controls = $('portfolio-estimate-controls')
+  const apply = $('apply-portfolio-estimate')
+  const date = fields.date.value + 'Z'
+  const result = walletBalances(project, date, selection?.id, !selection)
+  balances.hidden = false
+  balances.replaceChildren(...result.accounts.map(source => element('li', source.name + ' · ' +
+    (source.sats === null ? source.reason : source.sats.toLocaleString('fr-FR') + ' sats'))))
+  $('other-holdings-label').hidden = true
+  $('market-price-label').hidden = result.sats === null
+  controls.hidden = true
+  apply.disabled = true
+  if (result.sats === null) {
+    message.textContent = result.unassigned ? 'Rattachez les imports et les saisies manuelles aux sources déclarées.' :
+      'Valeur globale indisponible. Vérifiez les soldes ci-dessous.'
+    return null
+  }
+
+  const marketPrice = $('market-price').value.trim()
+  let rate = importedRate
+  if (marketPrice) {
+    try {
+      const centsPerBitcoin = BigInt(parseEuros(marketPrice))
+      rate = centsPerBitcoin ? sats => (sats * centsPerBitcoin + 50_000_000n) / 100_000_000n : null
+    } catch {
+      rate = null
+    }
+  }
+  message.textContent = 'Solde global avant cession : ' + result.sats.toLocaleString('fr-FR') + ' sats.'
+  if (!rate) {
+    message.textContent += ' Saisissez le cours BTC/EUR applicable.'
+    return null
+  }
+  const total = rate(BigInt(result.sats))
+  if (total <= 0n || total > 100_000_000_000_000n) {
+    message.textContent += ' Vérifiez le cours et le montant proposé.'
+    return null
+  }
+  message.textContent += ' Cours : ' + money(Number(rate(100_000_000n))) + ' par BTC' +
+    (marketPrice ? ' (saisie manuelle).' : ' (moyenne journalière Sparrow, indicative).')
+  controls.hidden = false
+  $('portfolio-estimate-help').textContent = 'Conservez le justificatif des soldes et du cours utilisé.'
+  apply.disabled = false
+  apply.textContent = 'Reprendre ' + money(Number(total))
+  return Number(total)
+}
+
 function importedLabel(entry) {
   return entry?.event?.label || entry?.row?.rawPayload.Label?.trim() || ''
 }
@@ -211,9 +261,106 @@ function suggestedQualification(entry) {
   return null
 }
 
+function sourceOptions() {
+  return [new Option('Choisir une source', ''), ...project.sources.map(source => new Option(source.name, source.id))]
+}
+
+function renderSources() {
+  const sources = project.sources
+  const start = fiscalPeriod(project.year).start
+  const opening = sources.length ? walletBalances(project, start) : null
+  const importSelection = $('registered-import')
+  const selected = importSelection.value
+  importSelection.replaceChildren(...sourceOptions())
+  importSelection.value = sources.some(source => source.id === selected) ? selected : sources.length === 1 ? sources[0].id : ''
+  importSelection.disabled = !sources.length
+  importSelection.required = !!sources.length
+  $('registered-import-label').hidden = !sources.length
+  const legacyImport = $('import-form').elements.source
+  const legacy = !sources.length && project.imports.length > 0
+  legacyImport.disabled = !legacy
+  $('legacy-import-label').hidden = !legacy
+  $('import-submit').disabled = !sources.length && !legacy
+  $('source-guide').textContent = sources.length
+    ? 'Après les imports ou saisies manuelles, confirmez la couverture de chaque source.'
+    : 'Ajoutez chaque wallet et plateforme, puis chargez les fichiers associés.'
+  const expanded = new Set(Array.from($('source-list').querySelectorAll('details[open]'), item => item.dataset.source))
+  $('source-list').replaceChildren(...sources.map((source, index) => {
+    const group = element('details', undefined, 'source-card')
+    group.dataset.source = source.id
+    group.open = expanded.has(source.id)
+    const balance = opening.accounts[index]
+    const count = project.imports.filter(bundle => bundle.source.id === source.id).length
+    const label = source.kind === 'wallet' ? 'Wallet' : 'Plateforme'
+    group.append(element('summary', source.name + ' · ' + label + ' · ' + count + ' fichier(s) · ' +
+      (balance.sats === null ? balance.reason : 'Ouverture : ' + balance.sats.toLocaleString('fr-FR') + ' sats' +
+        (balance.automatic ? ' (reconstituée)' : ''))))
+    const form = element('form', undefined, 'source-card-form')
+    const addField = (name, title, type, value) => {
+      const input = element('input')
+      input.name = name
+      input.type = type
+      input.value = value
+      const label = element('label', title)
+      label.append(input)
+      form.append(label)
+      return input
+    }
+    addField('anchorDate', 'Date et heure UTC du solde de référence', 'datetime-local',
+      (source.anchor?.date ?? start).slice(0, 19)).step = '1'
+    const sats = addField('anchorSats', 'Solde en sats au début de cet instant', 'number', source.anchor?.sats ?? '')
+    sats.min = '0'
+    sats.step = '1'
+    addField('anchorReference', 'Justificatif du solde de référence', 'text', source.anchor?.reference ?? '').maxLength = 500
+    form.append(element('small', 'Laissez le solde vide si Sparrow fournit un solde cumulé exploitable. ' +
+      'Sans fichier, indiquez le solde au 1er janvier et saisissez les mouvements un par un.'))
+    const coverage = element('input')
+    coverage.type = 'checkbox'
+    coverage.checked = source.coverage
+    const confirmation = element('label', undefined, 'check')
+    confirmation.append(coverage, element('span', 'J’ai recensé tous les mouvements de cette source entre le solde de référence, le début de l’année et la dernière cession à traiter.'))
+    form.append(confirmation)
+    const save = element('button', 'Valider cette source')
+    form.append(save)
+    const linked = count || Object.values(project.operations).some(operation => operation.sourceId === source.id)
+    if (!linked) form.append(button('Retirer cette source', () => {
+      project.sources = project.sources.filter(item => item.id !== source.id)
+      project.complete = false
+      changed('Source retirée.')
+    }))
+    form.addEventListener('submit', event => {
+      event.preventDefault()
+      const fields = form.elements
+      try {
+        if (sats.value === '') delete source.anchor
+        else {
+          const reference = fields.anchorReference.value.trim()
+          if (!reference || !fields.anchorDate.value) throw new Error('Indiquez la date et le justificatif du solde.')
+          source.anchor = { date: new Date(fields.anchorDate.value + 'Z').toISOString(), sats: parseSats(sats.value), reference }
+        }
+        source.coverage = coverage.checked
+        changed('Source mise à jour.')
+      } catch (error) {
+        status(error.message, true)
+      }
+    })
+    group.append(form)
+    return group
+  }))
+  const fields = $('opening-form').elements
+  fields.sats.readOnly = !!opening
+  if (opening) fields.sats.value = opening.sats ?? ''
+  const breakdown = $('opening-breakdown')
+  breakdown.hidden = !opening
+  if (opening) breakdown.textContent = opening.sats === null
+    ? 'Confirmez les sources et les soldes de référence pour obtenir le total d’ouverture.'
+    : 'Total reconstitué : ' + opening.sats.toLocaleString('fr-FR') + ' sats. Renseignez séparément le capital d’acquisition.'
+}
+
 function render(blockedRows = new Set()) {
   $('fiscal-year').value = project.year
   $('opening-title').textContent = 'Situation au 1er janvier ' + project.year
+  renderSources()
   $('accounts-year').textContent = 'J’ai vérifié les comptes ouverts, détenus, utilisés ou clos en ' + project.year + '.'
   const importNodes = project.imports.map(bundle => {
     const info = element('span', bundle.source.name + ' · ' + bundle.import.fileName + ' — ' +
@@ -225,6 +372,8 @@ function render(blockedRows = new Set()) {
       project.imports = project.imports.filter(value => value !== bundle)
       for (const row of bundle.rawRows) delete project.operations[row.id]
       project.complete = false
+      const source = project.sources.find(item => item.id === bundle.source.id)
+      if (source) source.coverage = false
       changed('Import retiré du dossier ouvert.')
     }))
     return item
@@ -238,7 +387,7 @@ function render(blockedRows = new Set()) {
   const operations = [
     ...activeRows,
     ...Object.entries(project.operations).filter(([, op]) => !op.rowId)
-      .map(([id, operation]) => ({ id, operation, title: 'Saisie manuelle' })),
+      .map(([id, operation]) => ({ id, operation, title: project.sources.find(source => source.id === operation.sourceId)?.name ?? 'Saisie manuelle' })),
   ]
   $('operations-empty').hidden = operations.length > 0
   $('table-scroll').hidden = operations.length === 0
@@ -333,6 +482,12 @@ function editOperation(entry = null) {
   const allowed = entry?.row ? Object.keys(labels).filter(type =>
     !entry.date || type === values.type || !['historique', 'post_cloture'].includes(type)
   ) : ['achat', 'vente', 'paiement', 'hors_perimetre']
+  fields.sourceId.replaceChildren(...sourceOptions())
+  fields.sourceId.value = values.sourceId ?? (project.sources.length === 1 ? project.sources[0].id : '')
+  const manualSource = !entry?.row && project.sources.length > 0
+  $('manual-source-label').hidden = !manualSource
+  fields.sourceId.disabled = !manualSource
+  fields.sourceId.required = manualSource
   fields.type.replaceChildren(...allowed.map(type => new Option(labels[type], type)))
   if (entry?.row) fields.type.prepend(new Option('Choisir une qualification', ''))
   const proposal = raw.type === 'depot' || raw.type === 'retrait' ? 'transfert' : raw.type
@@ -433,6 +588,23 @@ function updateOperationFields(selectedPeer) {
   updatePortfolioEstimate()
 }
 
+$('source-form').addEventListener('submit', event => {
+  event.preventDefault()
+  const form = event.currentTarget
+  const name = form.elements.name.value.trim()
+  const kind = form.elements.kind.value
+  if (!name || project.sources.some(source => source.kind === kind && source.name.toLowerCase() === name.toLowerCase())) {
+    status('Renseignez un nom de source distinct.', true)
+    return
+  }
+  const existing = project.imports.find(bundle => bundle.source.sourceType === kind &&
+    bundle.source.name.toLowerCase() === name.toLowerCase())
+  project.sources.push({ id: existing?.source.id ?? 'source:' + crypto.randomUUID(), name, kind, coverage: false })
+  project.complete = false
+  form.reset()
+  changed('Source ajoutée. Importez son historique ou renseignez son solde.')
+})
+
 $('opening-form').addEventListener('submit', event => {
   event.preventDefault()
   const data = new FormData(event.currentTarget)
@@ -444,7 +616,7 @@ $('opening-form').addEventListener('submit', event => {
     if (!sats && acquisitions !== used) throw new Error('Un solde nul doit avoir un capital restant nul.')
     const reference = data.get('reference').trim()
     if (!reference) throw new Error('Ajoutez un justificatif.')
-    project.opening = { sats, acquisitions, used, reference }
+    project.opening = { sats, acquisitions, used, reference, confirmed: true }
     changed('État d’ouverture validé.')
   } catch (error) {
     status(error.message, true)
@@ -464,8 +636,11 @@ $('import-form').addEventListener('submit', event => {
     const format = data.get('format')
     const content = hasPaste ? pasted : await readImportFile(file)
     if (!content.trim()) throw new Error('Le fichier sélectionné est vide.')
+    const registered = project.sources.find(source => source.id === data.get('sourceId'))
+    const source = registered?.name ?? data.get('source')?.trim()
+    if (!source) throw new Error('Déclarez et sélectionnez une source.')
     const response = await request('import', {
-      project, format, source: data.get('source').trim(),
+      project, format, source, ...(registered ? { sourceId: registered.id } : {}),
       name: hasPaste ? (format === 'bundle' ? 'import-collé.json' : 'import-collé.csv') : file.name,
       content,
     })
@@ -474,6 +649,8 @@ $('import-form').addEventListener('submit', event => {
       return
     }
     project = response.project
+    const importedSource = project.sources.find(source => source.id === registered?.id)
+    if (importedSource) importedSource.coverage = false
     project.complete = false
     project.accountsReviewed = false
     form.reset()
@@ -486,7 +663,14 @@ $('template').addEventListener('click', () => download(new Blob([
   'date_utc,type,sats,prix_eur,frais_eur,portefeuille_eur,justificatif,valorisation,txid\r\n',
 ], { type: 'text/csv' }), 'fiscalutxo-modele.csv'))
 
-$('add-operation').addEventListener('click', () => editOperation())
+$('add-operation').addEventListener('click', () => {
+  if (!project.sources.length && !project.imports.length && !Object.keys(project.operations).length) {
+    status('Ajoutez d’abord le wallet ou la plateforme de cette opération.', true)
+    $('source-form').elements.name.focus()
+    return
+  }
+  editOperation()
+})
 $('cancel-operation').addEventListener('click', () => dialog.close())
 $('apply-label-suggestion').addEventListener('click', () => {
   const proposal = selection && suggestedQualification(selection)
@@ -496,6 +680,13 @@ $('apply-label-suggestion').addEventListener('click', () => {
 })
 operationForm.elements.type.addEventListener('change', () => updateOperationFields(operationForm.elements.peer.value))
 $('other-holdings').addEventListener('input', updatePortfolioEstimate)
+$('market-price').addEventListener('input', () => {
+  if (appliedPortfolioEstimate && operationForm.elements.portfolio.value === appliedPortfolioEstimate) {
+    operationForm.elements.portfolio.value = ''
+    appliedPortfolioEstimate = ''
+  }
+  updatePortfolioEstimate()
+})
 operationForm.elements.sats.addEventListener('input', updateDisposalEstimate)
 $('apply-disposal-estimate').addEventListener('click', () => {
   const estimate = updateDisposalEstimate()
@@ -507,7 +698,7 @@ $('apply-disposal-estimate').addEventListener('click', () => {
 operationForm.elements.date.addEventListener('input', () => {
   const fields = operationForm.elements
   if (appliedPortfolioEstimate && fields.portfolio.value === appliedPortfolioEstimate &&
-      Date.parse(fields.date.value + 'Z') !== Date.parse(selection?.event?.occurredAt)) {
+      (project.sources.length || Date.parse(fields.date.value + 'Z') !== Date.parse(selection?.event?.occurredAt))) {
     fields.portfolio.value = ''
     appliedPortfolioEstimate = ''
   }
@@ -532,6 +723,7 @@ operationForm.addEventListener('submit', event => {
   try {
     const op = { type: data.get('type') }
     if (selection?.row) op.rowId = selection.id
+    else if (data.get('sourceId')) op.sourceId = data.get('sourceId')
     if (data.get('date')) {
       const timestamp = data.get('date')
       op.date = new Date(timestamp + 'Z').toISOString()

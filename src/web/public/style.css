@@ -92,3 +92,13 @@ dialog .input-grid{gap:0 1rem}
 [hidden]{display:none!important}
 @media(max-width:680px){.header{flex-wrap:wrap}.header nav{order:3;width:100%}.intro{align-items:start;flex-direction:column;gap:.8rem}.panels,.input-grid{grid-template-columns:1fr}.panels>div+div{padding:1rem 0 0;border-left:0;border-top:1px solid var(--line)}.account-form{grid-template-columns:1fr 5rem}.account-form label:nth-child(3){grid-column:1/-1}.file-actions{flex-wrap:wrap}}
 .result-actions,.exports{flex-wrap:wrap}
+.source-form{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) auto;align-items:end;gap:.6rem}
+.source-form button{margin-bottom:.72rem}
+.source-card{border:1px solid var(--line);border-radius:.35rem;padding:.55rem .65rem;margin:0 0 .55rem}
+.source-card summary{cursor:pointer;overflow-wrap:anywhere}
+.source-card-form{margin-top:.7rem;max-width:38rem}
+.source-card-form .check{flex-direction:row;align-items:baseline}
+.source-card-form button + button{margin-left:.45rem}
+#source-list:not(:empty){margin-bottom:1.2rem}
+.portfolio-balances{margin:0 0 .75rem;padding-left:1.25rem}
+@media(max-width:580px){.source-form{grid-template-columns:1fr}}

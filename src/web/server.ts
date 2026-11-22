@@ -8,6 +8,7 @@ import { demoProject, emptyProject, fiscalYearSchema, importInputSchema, ingest,
 const assets = {
   '/': ['./public/index.html', 'text/html; charset=utf-8'],
   '/app.js': ['./public/app.js', 'text/javascript; charset=utf-8'],
+  '/balances.js': ['../mvp/balances.js', 'text/javascript; charset=utf-8'],
   '/period.js': ['../mvp/period.js', 'text/javascript; charset=utf-8'],
   '/transport.js': ['./public/transport.js', 'text/javascript; charset=utf-8'],
   '/style.css': ['./public/style.css', 'text/css; charset=utf-8'],

@@ -1,0 +1,4 @@
+Date (UTC),Label,Value (sats),Balance (sats),Fee (sats),Value (EUR),Txid
+2024-12-10 10:00:00,Achat : acquisition historique,300000,300000,,180.00,acquisition-wallet-fictive
+2025-02-10 14:00:00,Transfert personnel : réception,500000,800000,,450.00,transfert-multisource-fictif
+2025-05-07 13:40:00,Vente : cession fictive,-400000,400000,0,-400.00,cession-multisource-fictive

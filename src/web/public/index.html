@@ -32,25 +32,35 @@
 
     <section id="imports" aria-labelledby="imports-title">
       <h2 id="imports-title">Sources et état d’ouverture</h2>
+      <h3>1. Lister les wallets et plateformes du foyer</h3>
+      <form id="source-form" class="source-form">
+        <label>Nom de la source<input name="name" maxlength="120" required></label>
+        <label>Type de source<select name="kind"><option value="wallet">Wallet</option><option value="platform">Plateforme</option></select></label>
+        <button>Ajouter la source</button>
+      </form>
+      <p id="source-guide">Ajoutez chaque wallet et plateforme, puis chargez les fichiers associés. Une source sans fichier peut être renseignée manuellement.</p>
+      <div id="source-list"></div>
       <div class="panels">
         <div>
-          <h3>Importer un fichier</h3>
+          <h3>2. Importer un fichier</h3>
           <form id="import-form">
             <label>Format<select name="format"><option value="sparrow">CSV Sparrow</option><option value="generique">CSV générique</option><option value="bundle">Bundle JSON de la CLI</option></select></label>
-            <label>Nom du wallet ou de la plateforme<input name="source" maxlength="120" placeholder="Ex. Sparrow épargne" required></label>
+            <label id="registered-import-label" hidden>Wallet ou plateforme<select id="registered-import" name="sourceId"></select></label>
+            <label id="legacy-import-label" hidden>Nom du wallet ou de la plateforme<input name="source" maxlength="120" placeholder="Ex. Sparrow épargne" required></label>
             <label>Fichier<input name="file" type="file"></label>
             <details class="paste-import">
               <summary>Coller le contenu à la place</summary>
               <label>Contenu du CSV ou du JSON<textarea name="content" rows="5" spellcheck="false" autocapitalize="off"></textarea></label>
             </details>
-            <button>Importer</button>
+            <button id="import-submit">Importer</button>
             <button type="button" class="secondary" id="template">Modèle CSV</button>
           </form>
           <p id="import-status" class="import-status" role="status"></p>
           <ul id="import-list" class="records"></ul>
         </div>
         <div>
-          <h3 id="opening-title">Situation à l’ouverture</h3>
+          <h3 id="opening-title">3. Situation à l’ouverture</h3>
+          <p id="opening-breakdown" hidden></p>
           <form id="opening-form">
             <label>Solde de tout le foyer en sats<input name="sats" type="number" min="0" step="1" required></label>
             <label>Prix d’acquisition cumulés en €<input name="acquisitions" inputmode="decimal" required></label>
@@ -88,6 +98,7 @@
           </dl>
           <ul id="row-diagnostics" aria-label="Anomalies d’import" hidden></ul>
           <button type="button" id="apply-label-suggestion" class="secondary" hidden></button>
+          <label id="manual-source-label" hidden>Wallet ou plateforme<select name="sourceId"></select></label>
           <label>Qualification<select name="type" required></select></label>
           <div class="input-grid">
             <label data-field="date">Date et heure UTC<input name="date" type="datetime-local" step="1"></label>
@@ -105,8 +116,12 @@
           </div>
           <div id="portfolio-estimate" hidden>
             <p id="portfolio-estimate-message" aria-live="polite"></p>
+            <ul id="portfolio-balances" class="portfolio-balances" hidden></ul>
+            <label id="market-price-label" hidden>Cours BTC/EUR à la date de cession
+              <input id="market-price" inputmode="decimal" placeholder="Prix en euros pour 1 BTC">
+            </label>
             <div id="portfolio-estimate-controls" hidden>
-              <label>Autres avoirs Bitcoin du foyer à cette date, en sats
+              <label id="other-holdings-label">Autres avoirs Bitcoin du foyer à cette date, en sats
                 <input id="other-holdings" inputmode="numeric" maxlength="16" placeholder="0 si aucun" aria-describedby="portfolio-estimate-help">
               </label>
               <p id="portfolio-estimate-help"><small>Vérifiez que le total couvre tous les wallets et plateformes du foyer. Renseignez le justificatif de la valorisation séparément.</small></p>

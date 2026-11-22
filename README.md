@@ -14,6 +14,8 @@ Pour tester l’import lui-même, télécharger [le CSV Sparrow fictif](samples/
 
 La démo fonctionne sans installation ni compte. Les fichiers et les calculs restent dans le navigateur. Si le sélecteur de fichiers bloque sur mobile, utiliser **Coller le contenu à la place** dans le formulaire d’import.
 
+Le [scénario plateforme + Sparrow](samples/README.md#essai-avec-une-plateforme-et-un-wallet) teste la reconstitution des soldes au 1er janvier, le rapprochement d’un transfert et l’estimation de la valeur globale d’une cession.
+
 ## Démarrer en local
 
 Depuis le dépôt, avec Node.js 22.12 ou plus récent dans une branche LTS prise en charge :
@@ -26,11 +28,11 @@ npm start
 
 Ouvrir dans le navigateur l’adresse `http://127.0.0.1:…` affichée dans le terminal. Une fois les dépendances installées, l’application fonctionne hors ligne.
 
-1. Choisir **Campagne déclarative** (2026 pour les opérations 2025, 2027 pour celles de 2026). Importer un CSV Sparrow, un CSV générique ou un bundle de la CLI. Utiliser un nom stable par wallet ou plateforme pour rapprocher les imports successifs.
+1. Choisir **Campagne déclarative**, puis lister les wallets et plateformes du foyer. Pour chaque source, importer un CSV Sparrow, un CSV générique ou un bundle de la CLI, ou saisir les mouvements manuellement. Confirmer la couverture de l’historique. Si le fichier ne donne aucun solde cumulé exploitable, renseigner un solde de référence daté.
 2. Confirmer l’état du portefeuille au 1er janvier de l’année des opérations, puis qualifier les achats, ventes, paiements et transferts. Si l’export Sparrow contient `Value (EUR)`, elle s’affiche dans **Estimation EUR** et propose un prix modifiable pour un achat. Le label préremplit le champ **Justificatif ou référence**. Vérifier ces deux propositions avant de confirmer.
    Les lignes datées hors période restent dans les imports du dossier. Les lignes dont la date est inconnue restent à vérifier. Un changement de campagne ouvre un nouveau dossier.
 
-   La colonne **Label** reprend le libellé Sparrow. Un libellé explicite comme `Vente : plateforme` peut proposer une qualification cohérente avec le sens du mouvement. L’utilisateur la confirme dans la fiche. Cliquer sur une ligne du tableau ouvre sa qualification. Sur mobile, la fiche donne accès au détail de l’opération. Pour une vente ou un paiement Sparrow, la fiche estime le solde du wallet avant cession au cours journalier du CSV. Renseigner les autres avoirs Bitcoin du foyer en sats (0 si aucun) pour reprendre l’estimation globale et documenter sa valorisation.
+   La colonne **Label** reprend le libellé Sparrow. Un libellé explicite comme `Vente : plateforme` peut proposer une qualification cohérente avec le sens du mouvement. L’utilisateur la confirme dans la fiche. Cliquer sur une ligne du tableau ouvre sa qualification. Sur mobile, la fiche donne accès au détail de l’opération. Pour une vente ou un paiement Sparrow, la fiche estime le solde du wallet avant cession au cours journalier du CSV. Avec des sources déclarées, la fiche détaille le solde de chacune avant la cession, et propose la valeur globale au cours Sparrow ou au cours BTC/EUR saisi. Dans un ancien dossier sans sources déclarées, compléter l’estimation du wallet Sparrow avec les autres avoirs du foyer.
 3. Renseigner les comptes concernés, confirmer la couverture du dossier et lancer le contrôle. Corriger les écarts affichés avant d’exporter le détail 2086, le résumé 2042 C et la checklist 3916-bis.
 4. Cliquer sur **Enregistrer le dossier** pour télécharger le JSON rechargeable. Le conserver dans un dossier privé hors du dépôt. Le bouton **Ouvrir** restaure les imports et les qualifications.
 
@@ -85,7 +87,9 @@ fiscalutxo/
 │       └── scope_change.yml
 └── samples/
     ├── README.md
-    └── sparrow-demo.csv
+    ├── plateforme-multisource.csv
+    ├── sparrow-demo.csv
+    └── sparrow-multisource.csv
 ```
 
 ## Documents principaux

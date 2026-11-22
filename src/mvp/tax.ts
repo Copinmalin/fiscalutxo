@@ -1,4 +1,5 @@
 import type { Operation, Project } from './project.js'
+import { walletBalances } from './balances.js'
 import { fiscalPeriod, importedDate, inFiscalPeriod } from './period.js'
 
 const PRECISION = 100_000_000n
@@ -27,6 +28,20 @@ export function calculate(project: Project) {
   }
   const rows = sourceRows(project)
   const { start, end } = fiscalPeriod(project.year)
+  const inventory = project.sources?.length ? walletBalances(project, start) : null
+  if (inventory) {
+    if (!project.opening.confirmed) block('Validez le capital d’acquisition à l’ouverture.')
+    if (inventory.unassigned) block('Rattachez les imports et les saisies manuelles aux sources déclarées.')
+    for (const account of inventory.accounts) {
+      if (account.sats === null) block(account.name + ' · ' + account.reason)
+    }
+    if (inventory.sats === null && !inventory.unassigned && inventory.accounts.every(account => account.sats !== null)) {
+      block('Le solde d’ouverture global dépasse la quantité maximale de BTC.')
+    }
+    if (inventory.sats === 0 && project.opening.acquisitions !== project.opening.used) {
+      block('Un solde d’ouverture nul doit avoir un capital restant nul.')
+    }
+  }
   const outsideRows = new Set(rows.filter(item => {
     const date = importedDate(item.row.rawPayload, item.event?.occurredAt)
     return date && !inFiscalPeriod(date, project.year)
@@ -131,7 +146,7 @@ export function calculate(project: Project) {
   }
 
   timeline.sort((a, b) => a.operation.date.localeCompare(b.operation.date) || a.id.localeCompare(b.id))
-  let balance = BigInt(project.opening.sats)
+  let balance = BigInt(inventory ? inventory.sats ?? 0 : project.opening.sats)
   let acquisitions = BigInt(project.opening.acquisitions) * PRECISION
   let used = BigInt(project.opening.used) * PRECISION
   let proceeds = 0n
@@ -165,7 +180,7 @@ export function calculate(project: Project) {
       acquisitions: cent(acquisitions), used: cent(used), basis: cent(basis),
       fraction: cent(fraction), gain: cent(result), reference: operation.reference,
       valuationReference: operation.valuationReference!,
-      source: linked ? linked.bundle.source.name : 'Saisie manuelle',
+      source: linked?.bundle.source.name ?? project.sources?.find(source => source.id === operation.sourceId)?.name ?? 'Saisie manuelle',
       file: linked?.bundle.import.fileName ?? '', row: linked?.row.rowNumber ?? null,
     })
     gain += result
