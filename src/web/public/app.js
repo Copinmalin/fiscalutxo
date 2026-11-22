@@ -417,9 +417,15 @@ function renderSources() {
         renderAccounts()
       }
     })
+    if (source.kind === 'wallet') {
+      const hasImportedBalance = project.imports.some(bundle => bundle.source.id === source.id &&
+        bundle.rawRows.some(row => importedBalanceAfter(row.rawPayload) !== null))
+      sats.required = !hasImportedBalance
+      coverage.required = true
+    }
     function updateRequirements() {
       const fields = form.elements
-      fields.anchorDate.required = fields.anchorReference.required = sats.value !== ''
+      fields.anchorDate.required = fields.anchorReference.required = sats.required || sats.value !== ''
       if (source.kind === 'platform') {
         fields.country.required = true
         const country = fields.country.value.trim().toUpperCase()
