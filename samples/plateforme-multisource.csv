@@ -1,3 +1,3 @@
-date_utc,type,sats,prix_eur,frais_eur,portefeuille_eur,justificatif,valorisation,txid
-2024-11-05T09:00:00Z,achat,1200000,720,,,Acquisition historique fictive,,acquisition-plateforme-fictive
-2025-02-10T14:00:00Z,retrait,500000,,,,Retrait vers wallet fictif,,transfert-multisource-fictif
+date_utc,type,sats,prix_eur,frais_eur,portefeuille_eur,justificatif,valorisation,txid,solde_sats
+2024-11-05T09:00:00Z,achat,1200000,720,,,Acquisition historique fictive,,acquisition-plateforme-fictive,1200000
+2025-02-10T14:00:00Z,retrait,500000,,,,Retrait vers wallet fictif,,transfert-multisource-fictif,700000

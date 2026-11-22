@@ -239,19 +239,22 @@ function parseGeneric(csv: string, context: { importId: string; sourceId: string
   }
   try {
     const [header, ...records] = readCsv(csv)
-    if (JSON.stringify(header?.record) !== JSON.stringify(genericHeaders)) {
+    const headers = header?.record ?? []
+    const expected = headers.at(-1) === 'solde_sats' ? [...genericHeaders, 'solde_sats'] : genericHeaders
+    if (JSON.stringify(headers) !== JSON.stringify(expected)) {
       result.errors.push('En-têtes du CSV générique invalides')
       return result
     }
     records.forEach(({ record, info }) => {
       const rowNumber = info.lines
       const id = context.importId + ':row:' + rowNumber
-      const rawPayload = Object.fromEntries(genericHeaders.map((field, column) => [field, record[column] ?? '']))
+      const rawPayload = Object.fromEntries(headers.map((field, column) => [field, record[column] ?? '']))
       const occurredAt = date.safeParse(rawPayload.date_utc)
       const amount = satoshis.safeParse(parseFixedDecimal(rawPayload.sats ?? '', 0))
       const kind = z.enum(['achat', 'vente', 'paiement', 'depot', 'retrait']).safeParse(rawPayload.type)
       const rowErrors = []
-      if (record.length !== genericHeaders.length) rowErrors.push('Nombre de colonnes invalide')
+      if (record.length !== headers.length) rowErrors.push('Nombre de colonnes invalide')
+      if (rawPayload.solde_sats && (!/^\d+$/.test(rawPayload.solde_sats) || !satoshis.safeParse(Number(rawPayload.solde_sats)).success)) rowErrors.push('Solde après opération invalide')
       if (!occurredAt.success) rowErrors.push('Date UTC invalide')
       if (!amount.success || !amount.data) rowErrors.push('Quantité en sats invalide')
       if (!kind.success) rowErrors.push('Type inconnu')

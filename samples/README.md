@@ -22,7 +22,7 @@
 
 1. Choisir la campagne **2026 · opérations 2025**. Ajouter **Plateforme fictive** dans le premier cadre, puis **Wallet Sparrow fictif** dans le cadre suivant.
 2. Dans chaque fiche, cliquer sur **Importer un fichier pour cette source**. Importer [plateforme-multisource.csv](plateforme-multisource.csv) comme **CSV générique** pour la plateforme, puis [sparrow-multisource.csv](sparrow-multisource.csv) comme **CSV Sparrow** pour le wallet.
-3. Ouvrir la fiche de la plateforme. Renseigner **1 200 000 sats** au **31 décembre 2024 à 23:00 UTC** (1er janvier 2025 à Paris) et indiquer « Relevé fictif au 1er janvier » comme justificatif. Saisir **FR** comme pays de l’entité fictive. Confirmer la couverture et valider la source.
+3. Ouvrir la fiche de la plateforme. Vérifier le solde de **1 200 000 sats** repris automatiquement au 1er janvier depuis la colonne `solde_sats`. Saisir **FR** comme pays de l’entité fictive. Confirmer la couverture et valider la source.
 4. Ouvrir la fiche du wallet. Laisser le solde de référence vide, confirmer la couverture et valider. Le solde reconstitué à l’ouverture est de **300 000 sats** et le total du foyer de **1 500 000 sats**.
 5. Dans **Situation au 1er janvier 2025**, renseigner **900 €** d’acquisitions cumulées et **0 €** déjà consommé, avec « Acquisitions fictives antérieures » comme justificatif. Valider l’ouverture.
 6. Qualifier le retrait de la plateforme puis la réception Sparrow comme **Transfert personnel**. Sur chaque ligne, sélectionner l’autre ligne du transfert. Les deux lignes datent du 10 février 2025 à 14:00 UTC et partagent la même référence. Le transfert est sans frais.

@@ -85,3 +85,5 @@ date_utc,type,sats,prix_eur,frais_eur,portefeuille_eur,justificatif,valorisation
 Les types proposés sont `achat`, `vente`, `paiement`, `depot` et `retrait`. Ces deux derniers proposent une revue en tant que transfert. Confirmer chaque ligne dans l’application et relier les deux côtés d’un transfert. Ajouter les montants et justificatifs manquants via l’interface. Les numéros de ligne indiquent la dernière ligne physique d’un enregistrement, y compris en présence d’un champ multiligne.
 
 Le dossier bloque la qualification double d’un même identifiant de transaction sur une source. Pour des imports successifs, garder le même nom de source. Rapprocher les doublons éventuels et vérifier les saisies manuelles, qui reposent sur l’attestation de complétude du dossier.
+
+Le CSV générique accepte une dernière colonne facultative `solde_sats` : solde de la source après le mouvement, en satoshis entiers. Elle permet de reconstituer automatiquement le solde d’ouverture.

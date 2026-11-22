@@ -69,6 +69,8 @@ describe('soldes par source', () => {
     expect(walletBalances(project, start).sats).toBeNull()
     platform.coverage = true
     delete platform.anchor
+    expect(walletBalances(project, start).accounts[0]).toMatchObject({ sats: 1_200_000, automatic: true })
+    for (const row of project.imports[0]!.rawRows) delete row.rawPayload.solde_sats
     expect(walletBalances(project, start).accounts[0]).toMatchObject({ sats: null, reason: 'Ajoutez un solde de référence daté.' })
   })
 

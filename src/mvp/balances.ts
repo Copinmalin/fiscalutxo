@@ -5,7 +5,7 @@ const maxSats = 2_100_000_000_000_000n
 
 export function importedBalanceAfter(payload: Record<string, string>) {
   for (const [header, raw] of Object.entries(payload)) {
-    const unit = /^Balance \((BTC|sats?)\)$/i.exec(header)?.[1]?.toLowerCase()
+    const unit = header === 'solde_sats' ? 'sats' : /^Balance \((BTC|sats?)\)$/i.exec(header)?.[1]?.toLowerCase()
     if (!unit) continue
     const match = (unit === 'btc' ? /^(\d+)(?:[.,](\d{1,8}))?$/ : /^(\d+)$/).exec(raw.trim())
     if (!match) return null
