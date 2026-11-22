@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; base-uri 'none'; form-action 'none'">
+  <title>Tester le parcours multi-source · FiscalUTXO</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="preview-guide">
+    <div class="intro"><h1>Tester le parcours multi-source</h1></div>
+    <p><a href="./">Ouvrir l’aperçu multi-source</a> · <a href="../">Ouvrir la version actuelle</a></p>
+    <section>
+      <h2>Télécharger les fichiers fictifs</h2>
+      <ul>
+        <li><a href="plateforme-multisource.csv" download>Plateforme fictive au format CSV générique</a></li>
+        <li><a href="sparrow-multisource.csv" download>Wallet fictif au format CSV Sparrow</a></li>
+      </ul>
+      <h2>Suivre le scénario</h2>
+      <ol>
+        <li>Choisir la campagne <strong>2026 · opérations 2025</strong>. Déclarer une plateforme et un wallet, puis importer le fichier correspondant à chaque source.</li>
+        <li>Dans la fiche de la plateforme, indiquer <strong>1 200 000 sats</strong> au <strong>31 décembre 2024 à 23:00 UTC</strong> avec « Relevé fictif » comme justificatif. Confirmer la couverture de l’historique et valider.</li>
+        <li>Dans la fiche du wallet, laisser le solde de référence vide, confirmer la couverture et valider. Sparrow permet de retrouver <strong>300 000 sats</strong> à l’ouverture.</li>
+        <li>Dans la situation au 1er janvier, renseigner <strong>900 €</strong> d’acquisitions cumulées, <strong>0 €</strong> de capital consommé et « Capital fictif » comme justificatif. Valider.</li>
+        <li>Qualifier le retrait de la plateforme et la réception Sparrow comme <strong>Transfert personnel</strong>. Sélectionner l’autre ligne dans chaque fiche, puis confirmer les deux qualifications.</li>
+        <li>Qualifier la dernière opération comme <strong>Vente</strong>. Reprendre le prix de <strong>400 €</strong>, renseigner <strong>0 €</strong> de frais et reprendre la valeur globale de <strong>1 500 €</strong>. Indiquer « Cours fictif Sparrow » comme justificatif de valorisation et confirmer.</li>
+        <li>Confirmer les deux cases de contrôle et lancer <strong>Contrôler le dossier</strong>. Le résultat attendu est <strong>160 € en 3AN</strong>. Le PDF 2086 est alors disponible.</li>
+      </ol>
+    </section>
+  </main>
+</body>
+</html>
