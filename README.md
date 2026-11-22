@@ -2,7 +2,21 @@
 
 FiscalUTXO est une application web locale qui aide un foyer fiscal français à préparer les cessions Bitcoin réalisées en 2025 ou 2026 dans le cadre de la gestion de son patrimoine privé.
 
-## Essai dans le navigateur
+## Essayer FiscalUTXO-multi
+
+Ouvrez [FiscalUTXO-multi dans votre navigateur](https://copinmalin.github.io/fiscalutxo/multisource/) et sélectionnez **Campagne 2026 · opérations 2025**. Créez les trois sources puis importez un fichier fictif dans chaque fiche.
+
+| Source | Fichier | Solde au 1er janvier | Solde final |
+|---|---|---:|---:|
+| Plateforme française | [CSV générique](samples/plateforme-multisource.csv) | 1 200 000 sats | 700 000 sats |
+| Plateforme allemande | [CSV générique](samples/plateforme-etrangere-audit.csv) | 0 sat | 500 000 sats |
+| Wallet personnel | [CSV Sparrow](samples/sparrow-multisource.csv) | 300 000 sats | 400 000 sats |
+
+Le foyer commence avec **1 500 000 sats** et **900 € de capital d’acquisition**. Après qualification de l’achat, des deux côtés du transfert et de la vente, le contrôle donne **140 € en 3AN**. Le compte allemand apparaît dans **Comptes à déclarer**. Son CERFA 3916-bis est disponible indépendamment de l’aide PDF 2086. Retrouvez les valeurs à saisir et les résultats de chaque étape dans le [compte rendu de l’audit](docs/AUDIT-TROIS-SOURCES.md).
+
+Le cours historique de mempool.space a été testé séparément. Le MVP utilise les montants importés ou confirmés par l’utilisateur et fonctionne sans connexion à ce service.
+
+## Essayer la démo initiale à une source
 
 1. Ouvrir [la démo FiscalUTXO](https://copinmalin.github.io/fiscalutxo/) sur ordinateur ou mobile.
 2. Choisir **Campagne 2026 · opérations 2025**, puis cliquer sur **Essayer avec un exemple**. Le tableau contient six lignes fictives, dont l’achat initial et la vente à qualifier.
