@@ -438,6 +438,43 @@ function renderSources() {
     : 'Total reconstitué : ' + opening.sats.toLocaleString('fr-FR') + ' sats. Renseignez séparément le capital d’acquisition.'
 }
 
+function renderAccounts() {
+  const accountsBySource = new Map(project.accounts.filter(account => account.sourceId)
+    .map(account => [account.sourceId, account]))
+  const sourceItems = project.sources.map(source => {
+    const account = accountsBySource.get(source.id)
+    const wallet = source.kind === 'wallet'
+    const item = element('li')
+    const description = element('div')
+    description.append(element('strong', source.name))
+    let details
+    if (wallet) details = ['Wallet en autoconservation', 'Hors 3916-bis']
+    else if (!account) details = ['Plateforme', 'Pays de l’entité à renseigner']
+    else {
+      const entity = account.entity === source.name ? null : account.entity
+      const reporting = account.country === 'FR' || !account.relevant ? 'Hors 3916-bis' :
+        account.reference ? 'À déclarer' : 'Référence du compte à renseigner'
+      details = ['Plateforme', entity, account.country, reporting, account.reference]
+    }
+    description.append(element('div', details.filter(Boolean).join(' · '), 'account-detail'))
+    item.append(description)
+    return item
+  })
+  const legacyItems = project.accounts.filter(account => !account.sourceId).map(account => {
+    const reporting = account.country === 'FR' || !account.relevant ? 'Hors 3916-bis' : 'À déclarer'
+    const item = element('li')
+    item.append(element('span', [account.entity, account.country, reporting, account.reference].filter(Boolean).join(' · ')),
+      button('Retirer', () => {
+        project.accounts = project.accounts.filter(value => value !== account)
+        project.accountsReviewed = false
+        changed('Compte retiré du dossier ouvert.')
+      }))
+    return item
+  })
+  $('account-empty').hidden = sourceItems.length + legacyItems.length > 0
+  $('account-list').replaceChildren(...sourceItems, ...legacyItems)
+}
+
 function render(blockedRows = new Set()) {
   $('fiscal-year').value = project.year
   $('opening-title').textContent = '3. Situation au 1er janvier ' + project.year
@@ -511,22 +548,7 @@ function render(blockedRows = new Set()) {
     operationsTable.append(tr)
   }
   $('operation-list').replaceChildren(operationsTable)
-  const foreignAccounts = project.accounts.filter(account => account.relevant && account.country !== 'FR')
-  const missingPlatforms = project.sources.filter(source => source.kind === 'platform' &&
-    !project.accounts.some(account => account.sourceId === source.id))
-  $('account-empty').hidden = !!(foreignAccounts.length || missingPlatforms.length)
-  $('account-list').replaceChildren(
-    ...missingPlatforms.map(source => element('li', source.name + ' · Pays du compte à renseigner dans la fiche de la plateforme')),
-    ...foreignAccounts.map(account => {
-      const item = element('li', account.entity + ' · ' + account.country + ' · ' + (account.reference || 'Référence à préciser'))
-      if (!account.sourceId) item.append(button('Retirer', () => {
-        project.accounts = project.accounts.filter(value => value !== account)
-        project.accountsReviewed = false
-        changed('Compte retiré du dossier ouvert.')
-      }))
-      return item
-    }),
-  )
+  renderAccounts()
   $('complete').checked = project.complete
   $('accounts-reviewed').checked = project.accountsReviewed
   for (const node of document.querySelectorAll('[data-format]')) node.disabled = !ready
